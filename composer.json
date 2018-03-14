@@ -1,0 +1,59 @@
+{
+    "name": "amphp/http-server-form-parser",
+    "homepage": "https://github.com/amphp/http-server-form-parser",
+    "description": "A form parser for Amp's HTTP parser.",
+    "keywords": [
+        "http",
+        "form",
+        "async",
+        "non-blocking",
+        "amp",
+        "amphp"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Lowrey",
+            "email": "rdlowrey@php.net"
+        },
+        {
+            "name": "Bob Weinand"
+        },
+        {
+            "name": "Niklas Keller",
+            "email": "me@kelunik.com"
+        },
+        {
+            "name": "Aaron Piotrowski",
+            "email": "aaron@trowski.com"
+        }
+    ],
+    "require": {
+        "amphp/amp": "^2",
+        "amphp/byte-stream": "^1.3",
+        "amphp/http-server": "dev-master"
+    },
+    "require-dev": {
+        "amphp/phpunit-util": "^1",
+        "friendsofphp/php-cs-fixer": "^2.3",
+        "phpunit/phpunit": "^6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Amp\\Http\\Server\\FormParser\\": "src"
+        },
+        "files": [
+            "src/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Amp\\Http\\Server\\FormParser\\Test\\": "test"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "7.0.13"
+        }
+    }
+}
