@@ -4,9 +4,9 @@ namespace Amp\Http\Server\FormParser\Test;
 
 use Amp\ByteStream\IteratorStream;
 use Amp\Emitter;
-use Amp\Http\Server\Body;
-use Amp\Http\Server\BodyParser;
-use Amp\Http\Server\Client;
+use Amp\Http\Server\RequestBody;
+use Amp\Http\Server\Driver\Client;
+use Amp\Http\Server\FormParser\BodyParser;
 use Amp\Http\Server\Request;
 use Amp\Loop;
 use League\Uri;
@@ -22,7 +22,7 @@ class BodyParsingTest extends TestCase {
 
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new Body(new IteratorStream($emitter->iterate()));
+        $body = new RequestBody(new IteratorStream($emitter->iterate()));
 
         $request = new Request($this->createMock(Client::class), "POST", Uri\Http::createFromString("/"), $headers, $body);
 
@@ -46,7 +46,7 @@ class BodyParsingTest extends TestCase {
 
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new Body(new IteratorStream($emitter->iterate()));
+        $body = new RequestBody(new IteratorStream($emitter->iterate()));
 
         $emitter->emit($data);
         $emitter->complete();
@@ -78,7 +78,7 @@ class BodyParsingTest extends TestCase {
 
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new Body(new IteratorStream($emitter->iterate()));
+        $body = new RequestBody(new IteratorStream($emitter->iterate()));
 
         $request = new Request($this->createMock(Client::class), "POST", Uri\Http::createFromString("/"), $headers, $body);
 
@@ -111,7 +111,7 @@ class BodyParsingTest extends TestCase {
 
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new Body(new IteratorStream($emitter->iterate()));
+        $body = new RequestBody(new IteratorStream($emitter->iterate()));
 
         $request = new Request($this->createMock(Client::class), "POST", Uri\Http::createFromString("/"), $headers, $body);
 
@@ -145,7 +145,7 @@ class BodyParsingTest extends TestCase {
 
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new Body(new IteratorStream($emitter->iterate()));
+        $body = new RequestBody(new IteratorStream($emitter->iterate()));
 
         $request = new Request($this->createMock(Client::class), "POST", Uri\Http::createFromString("/"), $headers, $body);
 
@@ -185,7 +185,7 @@ class BodyParsingTest extends TestCase {
 
         $headers = [];
         $headers["content-type"] = ["application/x-www-form-urlencoded"];
-        $body = new Body(new IteratorStream($emitter->iterate()));
+        $body = new RequestBody(new IteratorStream($emitter->iterate()));
 
         $request = new Request($this->createMock(Client::class), "POST", Uri\Http::createFromString("/"), $headers, $body);
 

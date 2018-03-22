@@ -23,7 +23,7 @@ class BodyParser implements Promise {
     /** @var Request */
     private $request;
 
-    /** @var \Amp\Http\Server\Body */
+    /** @var \Amp\Http\Server\RequestBody */
     private $body;
 
     /** @var string|null */
@@ -63,7 +63,7 @@ class BodyParser implements Promise {
         $this->request = $request;
         $type = $request->getHeader("content-type");
         $this->body = $request->getBody();
-        $this->body->increaseMaxSize($size);
+        $this->body->increaseSizeLimit($size);
         $this->maxFieldLength = $maxFieldLength;
         $this->maxInputVars = $maxInputVars;
 
