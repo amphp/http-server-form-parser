@@ -3,6 +3,7 @@
 namespace Amp\Http\Server\FormParser;
 
 use Amp\Http\Server\Request;
+use Amp\Promise;
 
 /**
  * Try parsing a the request's body with either x-www-form-urlencoded or multipart/form-data.
@@ -10,8 +11,8 @@ use Amp\Http\Server\Request;
  * @param Request $request
  * @param int     $sizeLimit Optional body size limit.
  *
- * @return BodyParser (returns a ParsedBody instance when yielded)
+ * @return Promise<ParsedBody>
  */
-function parseBody(Request $request, int $sizeLimit = BodyParser::DEFAULT_MAX_BODY_SIZE): BodyParser {
-    return new BodyParser($request, $sizeLimit);
+function parseBody(Request $request, int $sizeLimit = BodyParser::DEFAULT_MAX_BODY_SIZE): Promise {
+    return (new BodyParser($request, $sizeLimit))->parse();
 }

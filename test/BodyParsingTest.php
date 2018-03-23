@@ -11,7 +11,6 @@ use Amp\Http\Server\Request;
 use Amp\Loop;
 use League\Uri;
 use PHPUnit\Framework\TestCase;
-use function Amp\Http\Server\FormParser\parseBody;
 
 class BodyParsingTest extends TestCase {
     /**
@@ -30,7 +29,7 @@ class BodyParsingTest extends TestCase {
         $emitter->complete();
 
         Loop::run(function () use ($request, &$result) {
-            $parsedBody = yield parseBody($request);
+            $parsedBody = yield (new BodyParser($request))->parse();
             $result = $parsedBody->getAll();
         });
 
@@ -56,13 +55,13 @@ class BodyParsingTest extends TestCase {
         Loop::run(function () use ($request, $fields, $metadata) {
             $fieldlist = $fields;
 
-            $body = parseBody($request);
+            $body = new BodyParser($request);
 
             while (($field = yield $body->fetch()) !== null) {
                 $this->assertArrayHasKey($field, $fieldlist);
                 array_pop($fieldlist[$field]);
             }
-            $result = (yield $body)->getAll();
+            $result = (yield $body->parse())->getAll();
 
             $this->assertEquals(\count($fieldlist), \count($fieldlist, \COUNT_RECURSIVE));
             $this->assertEquals($fields, $result["fields"]);
@@ -90,12 +89,12 @@ class BodyParsingTest extends TestCase {
                 $emitter->complete();
             });
 
-            $body = parseBody($request);
+            $body = new BodyParser($request);
             while (($field = yield $body->fetch()) !== null) {
                 $this->assertArrayHasKey($field, $fieldList);
                 array_pop($fieldList[$field]);
             }
-            $result = (yield $body)->getAll();
+            $result = (yield $body->parse())->getAll();
 
             $this->assertEquals(\count($fieldList), \count($fieldList, \COUNT_RECURSIVE));
             $this->assertEquals($fields, $result["fields"]);
@@ -122,7 +121,7 @@ class BodyParsingTest extends TestCase {
             });
 
             $bodies = [];
-            $body = parseBody($request);
+            $body = new BodyParser($request);
             while (null !== $name = yield $body->fetch()) {
                 $bodies[] = [$body->stream($name), \array_shift($fields[$name])];
             }
@@ -131,7 +130,7 @@ class BodyParsingTest extends TestCase {
                 $this->assertEquals($expected, yield $stream->buffer());
             }
 
-            $result = (yield $body)->getAll();
+            $result = (yield $body->parse())->getAll();
 
             $this->assertEquals([], $result["fields"]);
         });
@@ -158,7 +157,7 @@ class BodyParsingTest extends TestCase {
             });
 
             $bodies = [];
-            $body = parseBody($request);
+            $body = new BodyParser($request);
             while (null !== $name = yield $body->fetch()) {
                 if (isset($bodies[$name])) {
                     $remaining[$name][] = \array_shift($fields[$name]);
@@ -172,7 +171,7 @@ class BodyParsingTest extends TestCase {
                 $this->assertEquals($expected, yield $stream->buffer());
             }
 
-            $result = (yield $body)->getAll();
+            $result = (yield $body->parse())->getAll();
 
             $this->assertEquals($remaining, $result["fields"]);
         });
@@ -212,7 +211,7 @@ class BodyParsingTest extends TestCase {
             $this->assertEquals("", yield $gh->buffer());
             $this->assertEquals("", yield $j->buffer());
         });
-        $body->onResolve(function ($e) { print $e; });
+        $body->parse()->onResolve(function ($e) { print $e; });
     }
 
     public function requestBodies() {

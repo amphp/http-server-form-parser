@@ -12,7 +12,7 @@ use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
 
-class BodyParser implements Promise {
+class BodyParser {
     const DEFAULT_MAX_BODY_SIZE = 131072;
     const DEFAULT_MAX_FIELD_LENGTH = 16384;
     const DEFAULT_MAX_INPUT_VARS = 200;
@@ -50,20 +50,20 @@ class BodyParser implements Promise {
 
     /**
      * @param Request $request
-     * @param int     $size Maximum size the body can be in bytes.
+     * @param int     $sizeLimit      Maximum size the body can be in bytes.
      * @param int     $maxFieldLength Maximum length of each individual field in bytes.
-     * @param int     $maxInputVars Maximum number of fields that the body may contain.
+     * @param int     $maxInputVars   Maximum number of fields that the body may contain.
      */
     public function __construct(
         Request $request,
-        int $size = self::DEFAULT_MAX_BODY_SIZE,
+        int $sizeLimit = self::DEFAULT_MAX_BODY_SIZE,
         int $maxFieldLength = self::DEFAULT_MAX_FIELD_LENGTH,
         int $maxInputVars = self::DEFAULT_MAX_INPUT_VARS
     ) {
         $this->request = $request;
         $type = $request->getHeader("content-type");
         $this->body = $request->getBody();
-        $this->body->increaseSizeLimit($size);
+        $this->body->increaseSizeLimit($sizeLimit);
         $this->maxFieldLength = $maxFieldLength;
         $this->maxInputVars = $maxInputVars;
 
@@ -78,10 +78,9 @@ class BodyParser implements Promise {
         }
     }
 
-    public function onResolve(callable $onResolved) {
+    public function parse(): Promise {
         if ($this->parsePromise) {
-            $this->parsePromise->onResolve($onResolved);
-            return;
+            return $this->parsePromise;
         }
 
         if ($this->incrementalParsePromise) {
@@ -115,23 +114,22 @@ class BodyParser implements Promise {
                 return new ParsedBody($fields, array_filter($metadata));
             });
 
-            $this->parsePromise->onResolve($onResolved);
-            return;
+            return $this->parsePromise;
         }
 
         // Use a faster parsing algorithm if incremental parsing has not been requested.
         $this->parsePromise = call(function () {
             try {
-                return $this->parse(yield $this->body->buffer());
+                return $this->parseBody(yield $this->body->buffer());
             } finally {
                 $this->result = null;
             }
         });
 
-        $this->parsePromise->onResolve($onResolved);
+        return $this->parsePromise;
     }
 
-    private function parse(string $data): ParsedBody {
+    private function parseBody(string $data): ParsedBody {
         // if we end up here, we haven't parsed anything at all yet, so do a quick parse
         if ($this->boundary !== null) {
             $fields = $metadata = [];
