@@ -4,10 +4,10 @@ namespace Amp\Http\Server\FormParser\Test;
 
 use Amp\ByteStream\IteratorStream;
 use Amp\Emitter;
-use Amp\Http\Server\RequestBody;
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\FormParser\BodyParser;
 use Amp\Http\Server\Request;
+use Amp\Http\Server\RequestBody;
 use Amp\Loop;
 use League\Uri;
 use PHPUnit\Framework\TestCase;
