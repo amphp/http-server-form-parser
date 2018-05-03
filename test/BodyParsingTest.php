@@ -5,7 +5,8 @@ namespace Amp\Http\Server\FormParser\Test;
 use Amp\ByteStream\IteratorStream;
 use Amp\Emitter;
 use Amp\Http\Server\Driver\Client;
-use Amp\Http\Server\FormParser\BodyParser;
+use Amp\Http\Server\FormParser\Form;
+use Amp\Http\Server\FormParser\FormParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestBody;
 use Amp\Loop;
@@ -29,8 +30,9 @@ class BodyParsingTest extends TestCase {
         $emitter->complete();
 
         Loop::run(function () use ($request, &$result) {
-            $parsedBody = yield (new BodyParser($request))->parse();
-            $result = $parsedBody->getAll();
+            /** @var Form $form */
+            $form = yield (new FormParser($request))->parse();
+            $result = $form->getAll();
         });
 
         $this->assertEquals($fields, $result["fields"]);
@@ -55,7 +57,7 @@ class BodyParsingTest extends TestCase {
         Loop::run(function () use ($request, $fields, $metadata) {
             $fieldlist = $fields;
 
-            $body = new BodyParser($request);
+            $body = new FormParser($request);
 
             while (($field = yield $body->fetch()) !== null) {
                 $this->assertArrayHasKey($field, $fieldlist);
@@ -89,7 +91,7 @@ class BodyParsingTest extends TestCase {
                 $emitter->complete();
             });
 
-            $body = new BodyParser($request);
+            $body = new FormParser($request);
             while (($field = yield $body->fetch()) !== null) {
                 $this->assertArrayHasKey($field, $fieldList);
                 array_pop($fieldList[$field]);
@@ -121,7 +123,7 @@ class BodyParsingTest extends TestCase {
             });
 
             $bodies = [];
-            $body = new BodyParser($request);
+            $body = new FormParser($request);
             while (null !== $name = yield $body->fetch()) {
                 $bodies[] = [$body->stream($name), \array_shift($fields[$name])];
             }
@@ -157,7 +159,7 @@ class BodyParsingTest extends TestCase {
             });
 
             $bodies = [];
-            $body = new BodyParser($request);
+            $body = new FormParser($request);
             while (null !== $name = yield $body->fetch()) {
                 if (isset($bodies[$name])) {
                     $remaining[$name][] = \array_shift($fields[$name]);
@@ -188,7 +190,7 @@ class BodyParsingTest extends TestCase {
 
         $request = new Request($this->createMock(Client::class), "POST", Uri\Http::createFromString("/"), $headers, $body);
 
-        $body = new BodyParser($request);
+        $body = new FormParser($request);
         // Purposely out of order of data arrival.
         $b = $body->stream("b");
         $d = $body->stream("d");

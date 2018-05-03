@@ -2,7 +2,7 @@
 
 namespace Amp\Http\Server\FormParser;
 
-class ParsedBody {
+final class Form {
     /** @var string[][] */
     private $fields;
 

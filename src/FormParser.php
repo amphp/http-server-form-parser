@@ -12,7 +12,7 @@ use Amp\Promise;
 use Amp\Success;
 use function Amp\call;
 
-class BodyParser {
+final class FormParser {
     const DEFAULT_MAX_BODY_SIZE = 131072;
     const DEFAULT_MAX_FIELD_LENGTH = 16384;
     const DEFAULT_MAX_INPUT_VARS = 200;
@@ -32,7 +32,7 @@ class BodyParser {
     /** @var Deferred[] */
     private $bodyDeferreds = [];
 
-    /** @var FieldBody[][] */
+    /** @var Field[][] */
     private $bodies = [];
 
     /** @var string[] */
@@ -70,7 +70,7 @@ class BodyParser {
         if ($type !== null && strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
             if (!preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
                 $this->request = null;
-                $this->parsePromise = new Success(new ParsedBody([]));
+                $this->parsePromise = new Success(new Form([]));
                 return;
             }
 
@@ -87,7 +87,7 @@ class BodyParser {
             $this->parsePromise = call(function () {
                 yield $this->incrementalParsePromise; // Wait for incremental parsing to complete.
 
-                // Send unconsumed data into a new ParsedBody instance.
+                // Send unconsumed data into a new Form instance.
 
                 $fields = $metadata = [];
 
@@ -101,7 +101,7 @@ class BodyParser {
 
                 foreach ($this->bodies as $key => $bodies) {
                     foreach ($bodies as $body) {
-                        /** @var FieldBody $body */
+                        /** @var Field $body */
                         $body->buffer()->onResolve($onResolve);
                         $body->getMetadata()->onResolve($metaOnResolve);
                     }
@@ -111,7 +111,7 @@ class BodyParser {
                     }
                 }
 
-                return new ParsedBody($fields, array_filter($metadata));
+                return new Form($fields, array_filter($metadata));
             });
 
             return $this->parsePromise;
@@ -129,14 +129,14 @@ class BodyParser {
         return $this->parsePromise;
     }
 
-    private function parseBody(string $data): ParsedBody {
+    private function parseBody(string $data): Form {
         // if we end up here, we haven't parsed anything at all yet, so do a quick parse
         if ($this->boundary !== null) {
             $fields = $metadata = [];
 
             // RFC 7578, RFC 2046 Section 5.1.1
             if (strncmp($data, "--$this->boundary\r\n", \strlen($this->boundary) + 4) !== 0) {
-                return new ParsedBody([]);
+                return new Form([]);
             }
 
             $exp = explode("\r\n--$this->boundary\r\n", $data);
@@ -150,7 +150,7 @@ class BodyParser {
                 foreach (explode("\r\n", $rawheaders) as $header) {
                     $split = explode(":", $header, 2);
                     if (!isset($split[1])) {
-                        return new ParsedBody([]);
+                        return new Form([]);
                     }
                     $headers[strtolower($split[0])] = trim($split[1]);
                 }
@@ -162,7 +162,7 @@ class BodyParser {
                 );
 
                 if (!$count || !isset($matches[1])) {
-                    return new ParsedBody([]);
+                    return new Form([]);
                 }
                 $name = $matches[1];
                 $fields[$name][] = $text;
@@ -180,7 +180,7 @@ class BodyParser {
                 }
             }
 
-            return new ParsedBody($fields, $metadata);
+            return new Form($fields, $metadata);
         }
 
         $fields = [];
@@ -191,7 +191,7 @@ class BodyParser {
             $this->fieldQueue[] = $field;
         }
 
-        return new ParsedBody($fields, []);
+        return new Form($fields, []);
     }
 
     public function fetch(): Promise {
@@ -227,19 +227,19 @@ class BodyParser {
     /**
      * @param string $name field name
      *
-     * @return FieldBody
+     * @return Field
      */
-    public function stream(string $name): FieldBody {
+    public function stream(string $name): Field {
         if ($this->request) {
             if (!$this->incrementalParsePromise) {
                 $this->incrementalParsePromise = new Coroutine($this->incrementalParse());
             }
             if (empty($this->bodies[$name])) {
                 $this->bodyDeferreds[$name][] = [$body = new Emitter, $metadata = new Deferred];
-                return new FieldBody($name, new IteratorStream($body->iterate()), $metadata->promise());
+                return new Field($name, new IteratorStream($body->iterate()), $metadata->promise());
             }
         } elseif (empty($this->bodies[$name])) {
-            return new FieldBody($name, new InMemoryStream, new Success([]));
+            return new Field($name, new InMemoryStream, new Success([]));
         }
 
         $key = key($this->bodies[$name]);
@@ -269,7 +269,7 @@ class BodyParser {
             unset($this->bodyDeferreds[$field][$key]);
         } else {
             $dataEmitter = new Emitter;
-            $body = new FieldBody($field, new IteratorStream($dataEmitter->iterate()), new Success($metadata));
+            $body = new Field($field, new IteratorStream($dataEmitter->iterate()), new Success($metadata));
             $this->bodies[$field][] = $body;
         }
 

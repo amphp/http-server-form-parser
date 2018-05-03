@@ -6,7 +6,7 @@ use Amp\ByteStream\InputStream;
 use Amp\ByteStream\Payload;
 use Amp\Promise;
 
-final class FieldBody extends Payload {
+final class Field extends Payload {
     /** @var string */
     private $name;
 

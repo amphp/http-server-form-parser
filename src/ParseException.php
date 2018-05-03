@@ -2,5 +2,5 @@
 
 namespace Amp\Http\Server\FormParser;
 
-class ParseException extends \Exception {
+final class ParseException extends \Exception {
 }

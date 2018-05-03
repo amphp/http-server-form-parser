@@ -11,8 +11,8 @@ use Amp\Promise;
  * @param Request $request
  * @param int     $sizeLimit Optional body size limit.
  *
- * @return Promise<ParsedBody>
+ * @return Promise<Form>
  */
-function parseBody(Request $request, int $sizeLimit = BodyParser::DEFAULT_MAX_BODY_SIZE): Promise {
-    return (new BodyParser($request, $sizeLimit))->parse();
+function parseBody(Request $request, int $sizeLimit = FormParser::DEFAULT_MAX_BODY_SIZE): Promise {
+    return (new FormParser($request, $sizeLimit))->parse();
 }
