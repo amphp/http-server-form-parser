@@ -7,7 +7,7 @@ final class Form {
     private $fields;
 
     /**
-     * @param Field[] $fields
+     * @param Field[][] $fields
      */
     public function __construct(array $fields) {
         $this->fields = $fields;
