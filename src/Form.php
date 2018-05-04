@@ -45,6 +45,10 @@ final class Form {
         return $values;
     }
 
+    public function hasField(string $name): bool {
+        return isset($this->fields[$name][0]);
+    }
+
     /**
      * Get first field with a given name or null, if no such field exists.
      *
