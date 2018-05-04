@@ -9,10 +9,15 @@ use Amp\Promise;
  * Try parsing a the request's body with either x-www-form-urlencoded or multipart/form-data.
  *
  * @param Request $request
- * @param int     $sizeLimit Optional body size limit.
+ * @param int     $fieldLengthLimit
+ * @param int     $fieldCountLimit
  *
  * @return Promise<Form>
  */
-function parseBody(Request $request, int $sizeLimit = FormParser::DEFAULT_MAX_BODY_SIZE): Promise {
-    return (new FormParser($request, $sizeLimit))->parse();
+function parseForm(
+    Request $request,
+    int $fieldLengthLimit = BufferingParser::DEFAULT_FIELD_LENGTH_LIMIT,
+    int $fieldCountLimit = BufferingParser::DEFAULT_FIELD_COUNT_LIMIT
+): Promise {
+    return (new BufferingParser($request, $fieldLengthLimit, $fieldCountLimit))->parseForm();
 }

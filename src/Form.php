@@ -3,76 +3,76 @@
 namespace Amp\Http\Server\FormParser;
 
 final class Form {
-    /** @var string[][] */
+    /** @var Field[][] */
     private $fields;
 
-    /** @var string[] */
-    private $metadata;
-
-    /** @var string[]|null */
-    private $names;
-
-    public function __construct(array $fields, array $metadata = []) {
+    /**
+     * @param Field[] $fields
+     */
+    public function __construct(array $fields) {
         $this->fields = $fields;
-        $this->metadata = $metadata;
     }
 
     /**
-     * Fetch a string parameter (or null if it doesn't exist).
+     * Get first field value with a given name or null, if no such field exists.
      *
      * @param string $name
+     *
      * @return string|null
      */
-    public function get(string $name) {
+    public function getValue(string $name) {
+        if (!isset($this->fields[$name][0])) {
+            return null;
+        }
+
+        return $this->fields[$name][0]->getValue();
+    }
+
+    /**
+     * Get all field values with a given name.
+     *
+     * @param string $name
+     *
+     * @return string[]
+     */
+    public function getValueArray(string $name): array {
+        $values = [];
+
+        foreach ($this->fields[$name] ?? [] as $field) {
+            $values[] = $field->getValue();
+        }
+
+        return $values;
+    }
+
+    /**
+     * Get first field with a given name or null, if no such field exists.
+     *
+     * @param string $name
+     *
+     * @return Field|null
+     */
+    public function getField(string $name) {
         return $this->fields[$name][0] ?? null;
     }
 
     /**
-     * Fetch an array parameter (or empty array if it doesn't exist).
+     * Get all fields with a given name.
      *
      * @param string $name
-     * @return array
+     *
+     * @return Field[]
      */
-    public function getArray(string $name): array {
+    public function getFieldArray(string $name): array {
         return $this->fields[$name] ?? [];
-    }
-
-    /**
-     * Contains an array("filename" => $name, "mime" => $mimetype)
-     * Elements may be missing, but in case a filename is provided, mime is always set.
-     *
-     * @param string $name
-     * @return array|null
-     */
-    public function getMetadata(string $name) {
-        return $this->metadata[$name][0] ?? null;
-    }
-
-    /**
-     * Fetch an array of metadata.
-     *
-     * @param string $name
-     * @return array
-     */
-    public function getMetadataArray(string $name): array {
-        return $this->metadata[$name] ?? [];
     }
 
     /**
      * Returns the names of the passed fields.
      *
-     * @return array
+     * @return string[]
      */
     public function getNames(): array {
-        return $this->names ?? $this->names = array_keys($this->fields);
-    }
-
-    /**
-     * returns two associative fields and metadata arrays (like for extended abstractions or debug).
-     *
-     * @return array
-     */
-    public function getAll(): array {
-        return ["fields" => $this->fields, "metadata" => $this->metadata];
+        return \array_keys($this->fields);
     }
 }
