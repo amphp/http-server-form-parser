@@ -3,21 +3,26 @@
 namespace Amp\Http\Server\FormParser;
 
 final class Form {
-    /** @var Field[][] */
+    /** @var string[][] */
     private $fields;
+
+    /** @var File[][] */
+    private $files;
 
     /** @var string[] */
     private $names;
 
     /**
-     * @param Field[][] $fields
+     * @param string[][] $fields
+     * @param File[][]   $files
      */
-    public function __construct(array $fields) {
+    public function __construct(array $fields, array $files = []) {
         $this->fields = $fields;
+        $this->files = $files;
     }
 
     /**
-     * Get first field value with a given name or null, if no such field exists.
+     * Gets the first field value with a given name or null, if no such field exists.
      *
      * @param string $name
      *
@@ -28,11 +33,11 @@ final class Form {
             return null;
         }
 
-        return $this->fields[$name][0]->getValue();
+        return $this->fields[$name][0];
     }
 
     /**
-     * Get all field values with a given name.
+     * Gets all field values with a given name.
      *
      * @param string $name
      *
@@ -42,40 +47,56 @@ final class Form {
         $values = [];
 
         foreach ($this->fields[$name] ?? [] as $field) {
-            $values[] = $field->getValue();
+            $values[] = $field;
         }
 
         return $values;
     }
 
-    public function hasField(string $name): bool {
-        return isset($this->fields[$name][0]);
+    /**
+     * Gets all field values.
+     *
+     * @return string[][]
+     */
+    public function getValues(): array {
+        return $this->fields;
     }
 
     /**
-     * Get first field with a given name or null, if no such field exists.
+     * Checks whether at least one file field is available for the given name.
      *
      * @param string $name
      *
-     * @return Field|null
+     * @return bool
      */
-    public function getField(string $name) {
-        return $this->fields[$name][0] ?? null;
+    public function hasFile(string $name): bool {
+        return isset($this->files[$name][0]);
     }
 
     /**
-     * Get all fields with a given name.
+     * Gets the first file field with a given name or null, if no such field exists.
      *
      * @param string $name
      *
-     * @return Field[]
+     * @return File|null
      */
-    public function getFieldArray(string $name): array {
-        return $this->fields[$name] ?? [];
+    public function getFile(string $name) {
+        return $this->files[$name][0] ?? null;
     }
 
     /**
-     * Returns the names of the passed fields.
+     * Gets all file fields with a given name.
+     *
+     * @param string $name
+     *
+     * @return File[]
+     */
+    public function getFileArray(string $name): array {
+        return $this->files[$name] ?? [];
+    }
+
+    /**
+     * Returns the names of all fields.
      *
      * @return string[]
      */
