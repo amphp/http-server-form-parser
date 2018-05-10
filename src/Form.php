@@ -6,6 +6,9 @@ final class Form {
     /** @var Field[][] */
     private $fields;
 
+    /** @var string[] */
+    private $names;
+
     /**
      * @param Field[][] $fields
      */
@@ -77,6 +80,6 @@ final class Form {
      * @return string[]
      */
     public function getNames(): array {
-        return \array_keys($this->fields);
+        return $this->names ?? $this->names = \array_map("strval", \array_keys($this->fields));
     }
 }
