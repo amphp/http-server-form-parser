@@ -82,13 +82,13 @@ final class BufferingParser {
                 $field = \urldecode($pair[0]);
                 $value = \urldecode($pair[1] ?? "");
 
-                $fields[$field][] = new Field($field, $value);
+                $fields[$field][] = $value;
             }
 
             return new Form($fields);
         }
 
-        $fields = [];
+        $fields = $files = [];
 
         // RFC 7578, RFC 2046 Section 5.1.1
         if (\strncmp($body, "--$boundary\r\n", \strlen($boundary) + 4) !== 0) {
@@ -124,18 +124,15 @@ final class BufferingParser {
             // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
 
             $name = $matches[1];
+            $contentType = $headers["content-type"] ?? "text/plain";
 
             if (isset($matches[2])) {
-                $attributes = new FieldAttributes($headers["content-type"] ?? "text/plain", $matches[2]);
-            } elseif (isset($headers["content-type"])) {
-                $attributes = new FieldAttributes($headers["content-type"]);
+                $files[$name][] = new File($matches[2], $text, $contentType);
             } else {
-                $attributes = new FieldAttributes;
+                $fields[$name][] = $text;
             }
-
-            $fields[$name][] = new Field($name, $text, $attributes);
         }
 
-        return new Form($fields);
+        return new Form($fields, $files);
     }
 }

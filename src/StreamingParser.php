@@ -96,6 +96,10 @@ final class StreamingParser {
                     }
                 }
 
+                if ($fieldCount++ === $this->fieldCountLimit) {
+                    throw new ParseException("Maximum number of variables exceeded");
+                }
+
                 $headers = [];
 
                 foreach (\explode("\r\n", substr($buffer, $offset, $end - $offset)) as $header) {
@@ -122,21 +126,9 @@ final class StreamingParser {
 
                 // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
 
-                if (isset($matches[2])) {
-                    $fieldAttributes = new FieldAttributes($headers["content-type"] ?? "text/plain", $matches[2]);
-                } elseif (isset($headers["content-type"])) {
-                    $fieldAttributes = new FieldAttributes($headers["content-type"]);
-                } else {
-                    $fieldAttributes = new FieldAttributes;
-                }
-
-                if ($fieldCount++ === $this->fieldCountLimit) {
-                    throw new ParseException("Maximum number of variables exceeded");
-                }
-
                 $dataEmitter = new Emitter;
                 $stream = new IteratorStream($dataEmitter->iterate());
-                $field = new StreamedField($fieldName, $stream, $fieldAttributes);
+                $field = new StreamedField($fieldName, $stream, $headers["content-type"] ?? "text/plain", $matches[2] ?? null);
 
                 $emitPromise = $emitter->emit($field);
 
