@@ -73,7 +73,7 @@ class ParsingTest extends TestCase {
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
 
         wait(call(function () use ($request, $fields) {
-            $iterator = (new StreamingParser($request))->parseForm();
+            $iterator = (new StreamingParser)->parseForm($request);
 
             foreach ($fields as $key => $values) {
                 foreach ($values as $value) {

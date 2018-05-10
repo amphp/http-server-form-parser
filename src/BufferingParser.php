@@ -15,8 +15,8 @@ final class BufferingParser {
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
     private $fieldCountLimit;
 
-    public function __construct() {
-        $this->fieldCountLimit = \ini_get('max_input_vars');
+    public function __construct(int $fieldCountLimit = null) {
+        $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
     }
 
     /**

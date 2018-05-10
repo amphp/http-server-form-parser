@@ -2,119 +2,76 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\ByteStream\InputStream;
 use Amp\ByteStream\IteratorStream;
 use Amp\Emitter;
 use Amp\Http\Server\Request;
-use Amp\Http\Server\RequestBody;
 use Amp\Iterator;
 use function Amp\asyncCall;
 
 final class StreamingParser {
-    const DEFAULT_FIELD_LENGTH_LIMIT = 16384;
-    const DEFAULT_FIELD_COUNT_LIMIT = 200;
-
-    /** @var Emitter */
-    private $emitter;
-
-    /** @var Iterator */
-    private $iterator;
-
-    /** @var RequestBody */
-    private $body;
-
-    /** @var string|null */
-    private $boundary;
-
-    /** @var int Prevent buffering of arbitrary long names and fail instead */
-    private $fieldLengthLimit;
-
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
     private $fieldCountLimit;
 
-    /** @var int Current field count */
-    private $fieldCount = 0;
+    public function __construct(int $fieldCountLimit = null) {
+        $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
+    }
 
-    /**
-     * @param Request $request
-     * @param int     $fieldLengthLimit Maximum length of each individual field in bytes.
-     * @param int     $fieldCountLimit Maximum number of fields that the body may contain.
-     */
-    public function __construct(
-        Request $request,
-        int $fieldLengthLimit = self::DEFAULT_FIELD_LENGTH_LIMIT,
-        int $fieldCountLimit = self::DEFAULT_FIELD_COUNT_LIMIT
-    ) {
+    public function parseForm(Request $request): Iterator {
         $type = $request->getHeader("content-type");
-        $this->body = $request->getBody();
-        $this->fieldLengthLimit = $fieldLengthLimit;
-        $this->fieldCountLimit = $fieldCountLimit;
+        $boundary = null;
 
         if ($type !== null && strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
             if (!preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                $this->iterator = Iterator\fromIterable([]);
-
-                return;
+                return Iterator\fromIterable([]);
             }
 
-            $this->boundary = $matches[2];
-        }
-    }
-
-    public function parseForm(): Iterator {
-        if ($this->iterator) {
-            throw new \Error("Parsing can only be started once.");
+            $boundary = $matches[2];
+            unset($matches);
         }
 
-        $this->emitter = new Emitter;
-        $this->iterator = $this->emitter->iterate();
+        $body = $request->getBody();
 
-        asyncCall(function () {
+        $emitter = new Emitter;
+        $iterator = $emitter->iterate();
+
+        asyncCall(function () use ($boundary, $emitter, $body) {
             try {
-                if ($this->boundary) {
-                    yield from $this->incrementalBoundaryParse();
+                if ($boundary !== null) {
+                    yield from $this->incrementalBoundaryParse($emitter, $body, $boundary);
                 } else {
-                    yield from $this->incrementalFieldParse();
+                    yield from $this->incrementalFieldParse($emitter, $body);
                 }
 
-                $this->emitter->complete();
+                $emitter->complete();
             } catch (\Throwable $e) {
-                $this->emitter->fail($e);
+                $emitter->fail($e);
             } finally {
-                $this->emitter = null;
+                $emitter = null;
             }
         });
 
-        return $this->iterator;
+        return $iterator;
     }
 
     /**
-     * @param string $fieldName
+     * @param Emitter     $emitter
+     * @param InputStream $body
+     * @param string      $boundary
      *
-     * @throws ParseException
-     */
-    private function checkFieldLimits(string $fieldName) {
-        if ($this->fieldCount++ === $this->fieldCountLimit) {
-            throw new ParseException("Maximum number of variables exceeded");
-        }
-
-        if (\strlen($fieldName) > $this->fieldLengthLimit) {
-            throw new ParseException("Maximum field length exceeded");
-        }
-    }
-
-    /**
      * @return \Generator
-     *
-     * @throws ParseException
+     * @throws \Throwable
      */
-    private function incrementalBoundaryParse(): \Generator {
+    private function incrementalBoundaryParse(Emitter $emitter, InputStream $body, string $boundary): \Generator {
+        $fieldCount = 0;
+
         try {
             $buffer = "";
 
             // RFC 7578, RFC 2046 Section 5.1.1
-            $boundarySeparator = "--{$this->boundary}";
+            $boundarySeparator = "--{$boundary}";
             while (\strlen($buffer) < \strlen($boundarySeparator) + 4) {
-                $buffer .= $chunk = yield $this->body->read();
+                $buffer .= $chunk = yield $body->read();
 
                 if ($chunk === null) {
                     throw new ParseException("Request body ended unexpectedly");
@@ -132,7 +89,7 @@ final class StreamingParser {
                 $offset += 2;
 
                 while (($end = strpos($buffer, "\r\n\r\n", $offset)) === false) {
-                    $buffer .= $chunk = yield $this->body->read();
+                    $buffer .= $chunk = yield $body->read();
 
                     if ($chunk === null) {
                         throw new ParseException("Request body ended unexpectedly");
@@ -173,19 +130,21 @@ final class StreamingParser {
                     $fieldAttributes = new FieldAttributes;
                 }
 
-                $this->checkFieldLimits($fieldName);
+                if ($fieldCount++ === $this->fieldCountLimit) {
+                    throw new ParseException("Maximum number of variables exceeded");
+                }
 
                 $dataEmitter = new Emitter;
                 $stream = new IteratorStream($dataEmitter->iterate());
                 $field = new StreamedField($fieldName, $stream, $fieldAttributes);
 
-                $emitPromise = $this->emitter->emit($field);
+                $emitPromise = $emitter->emit($field);
 
                 $buffer = \substr($buffer, $end + 4);
                 $offset = 0;
 
                 while (($end = \strpos($buffer, $boundarySeparator, $offset)) === false) {
-                    $buffer .= $chunk = yield $this->body->read();
+                    $buffer .= $chunk = yield $body->read();
 
                     if ($chunk === null) {
                         $e = new ParseException("Request body ended unexpectedly");
@@ -206,7 +165,7 @@ final class StreamingParser {
                 $offset = $end + \strlen($boundarySeparator);
 
                 while (\strlen($buffer) < 4) {
-                    $buffer .= $chunk = yield $this->body->read();
+                    $buffer .= $chunk = yield $body->read();
 
                     if ($chunk === null) {
                         throw new ParseException("Request body ended unexpectedly");
@@ -225,15 +184,20 @@ final class StreamingParser {
     }
 
     /**
+     * @param Emitter     $emitter
+     * @param InputStream $body
+     *
      * @return \Generator
      *
-     * @throws ParseException
+     * @throws \Throwable
      */
-    private function incrementalFieldParse(): \Generator {
+    private function incrementalFieldParse(Emitter $emitter, InputStream $body): \Generator {
+        $fieldCount = 0;
+
         try {
             $buffer = "";
 
-            while (null !== $chunk = yield $this->body->read()) {
+            while (null !== $chunk = yield $body->read()) {
                 if ($chunk === "") {
                     continue;
                 }
@@ -249,13 +213,17 @@ final class StreamingParser {
 
                     $dataEmitter = new Emitter;
 
-                    $emitPromise = $this->emitter->emit(new StreamedField(
+                    if ($fieldCount++ === $this->fieldCountLimit) {
+                        throw new ParseException("Maximum number of variables exceeded");
+                    }
+
+                    $emitPromise = $emitter->emit(new StreamedField(
                         $fieldName,
                         new IteratorStream($dataEmitter->iterate())
                     ));
 
                     while (false === ($nextPos = \strpos($buffer, "&"))) {
-                        $chunk = yield $this->body->read();
+                        $chunk = yield $body->read();
 
                         if ($chunk === null) {
                             yield $dataEmitter->emit(\urldecode($buffer));
@@ -266,10 +234,6 @@ final class StreamingParser {
                         }
 
                         $buffer .= $chunk;
-
-                        if (\strlen($buffer) > $this->fieldLengthLimit) {
-                            throw new ParseException("Maximum field length exceeded");
-                        }
 
                         $lastEncodedPos = \strrpos($buffer, "%", -2);
                         $chunk = $buffer;
@@ -297,23 +261,27 @@ final class StreamingParser {
 
                 $nextPos = \strpos($buffer, "&");
                 if ($nextPos === false) {
-                    if (\strlen($buffer) > $this->fieldLengthLimit) {
-                        throw new ParseException("Maximum field length exceeded");
-                    }
-
                     continue;
                 }
 
                 $fieldName = \urldecode(\substr($buffer, 0, $nextPos));
                 $buffer = \substr($buffer, $nextPos + 1);
 
-                yield $this->emitter->emit(new StreamedField($fieldName));
+                if ($fieldCount++ === $this->fieldCountLimit) {
+                    throw new ParseException("Maximum number of variables exceeded");
+                }
+
+                yield $emitter->emit(new StreamedField($fieldName));
 
                 goto parse_parameter;
             }
 
             if ($buffer) {
-                yield $this->emitter->emit(new StreamedField(\urldecode($buffer)));
+                if ($fieldCount + 1 === $this->fieldCountLimit) {
+                    throw new ParseException("Maximum number of variables exceeded");
+                }
+
+                yield $emitter->emit(new StreamedField(\urldecode($buffer)));
             }
         } catch (\Throwable $e) {
             if (isset($dataEmitter)) {
