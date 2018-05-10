@@ -2,7 +2,6 @@
 
 namespace Amp\Http\Server\FormParser;
 
-use Amp\ByteStream\InMemoryStream;
 use Amp\ByteStream\IteratorStream;
 use Amp\Emitter;
 use Amp\Http\Server\Request;
@@ -294,23 +293,23 @@ final class StreamingParser {
                     yield $emitPromise;
 
                     goto parse_parameter;
-                } else {
-                    $nextPos = \strpos($buffer, "&");
-                    if ($nextPos === false) {
-                        if (\strlen($buffer) > $this->fieldLengthLimit) {
-                            throw new ParseException("Maximum field length exceeded");
-                        }
+                }
 
-                        continue;
+                $nextPos = \strpos($buffer, "&");
+                if ($nextPos === false) {
+                    if (\strlen($buffer) > $this->fieldLengthLimit) {
+                        throw new ParseException("Maximum field length exceeded");
                     }
 
-                    $fieldName = \urldecode(\substr($buffer, 0, $nextPos));
-                    $buffer = \substr($buffer, $nextPos + 1);
-
-                    yield $this->emitter->emit(new StreamedField($fieldName));
-
-                    goto parse_parameter;
+                    continue;
                 }
+
+                $fieldName = \urldecode(\substr($buffer, 0, $nextPos));
+                $buffer = \substr($buffer, $nextPos + 1);
+
+                yield $this->emitter->emit(new StreamedField($fieldName));
+
+                goto parse_parameter;
             }
 
             if ($buffer) {

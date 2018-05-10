@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Amp\Http\Server\FormParser;
 
 use Amp\ByteStream\InMemoryStream;
