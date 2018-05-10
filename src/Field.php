@@ -15,7 +15,7 @@ final class Field {
     public function __construct(string $name, string $value = "", FieldAttributes $attributes = null) {
         $this->name = $name;
         $this->value = $value;
-        $this->attributes = $attributes ?? new FieldAttributes;
+        $this->attributes = $attributes;
     }
 
     public function getName(): string {
@@ -31,6 +31,6 @@ final class Field {
     }
 
     public function getAttributes(): FieldAttributes {
-        return $this->attributes;
+        return $this->attributes ?? $this->attributes = new FieldAttributes;
     }
 }
