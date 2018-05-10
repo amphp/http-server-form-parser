@@ -10,7 +10,7 @@ final class StreamedField extends Payload {
     /** @var string */
     private $name;
 
-    /** @var FieldAttributes */
+    /** @var FieldAttributes|null */
     private $attributes;
 
     /**
@@ -21,7 +21,7 @@ final class StreamedField extends Payload {
     public function __construct(string $name, InputStream $stream = null, FieldAttributes $attributes = null) {
         parent::__construct($stream ?? new InMemoryStream);
         $this->name = $name;
-        $this->attributes = $attributes ?? new FieldAttributes;
+        $this->attributes = $attributes;
     }
 
     public function getName(): string {
@@ -29,6 +29,6 @@ final class StreamedField extends Payload {
     }
 
     public function getAttributes(): FieldAttributes {
-        return $this->attributes;
+        return $this->attributes ?? $this->attributes = new FieldAttributes;
     }
 }
