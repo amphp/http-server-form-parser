@@ -49,7 +49,7 @@ class ParsingTest extends TestCase {
 
                     $formField = $formFields[$key];
                     $this->assertSame($formField->getAttributes()->getMimeType(), $data["mime"]);
-                    $this->assertSame($formField->getAttributes()->hasFilename(), isset($data["filename"]));
+                    $this->assertSame($formField->getAttributes()->isFile(), isset($data["filename"]));
                     $this->assertSame($formField->getAttributes()->getFilename(), $data["filename"] ?? null);
                 }
             }

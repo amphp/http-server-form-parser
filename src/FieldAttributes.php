@@ -18,7 +18,7 @@ final class FieldAttributes {
         return $this->mimeType;
     }
 
-    public function hasFilename(): bool {
+    public function isFile(): bool {
         return $this->filename !== null;
     }
 
