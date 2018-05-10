@@ -5,7 +5,6 @@ namespace Amp\Http\Server\FormParser\Test;
 use Amp\ByteStream\InMemoryStream;
 use Amp\ByteStream\IteratorStream;
 use Amp\Http\Server\Driver\Client;
-use Amp\Http\Server\FormParser\BufferingParser;
 use Amp\Http\Server\FormParser\Form;
 use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingParser;
@@ -15,6 +14,7 @@ use Amp\Iterator;
 use League\Uri;
 use PHPUnit\Framework\TestCase;
 use function Amp\call;
+use function Amp\Http\Server\FormParser\parseForm;
 use function Amp\Promise\wait;
 
 class ParsingTest extends TestCase {
@@ -36,7 +36,7 @@ class ParsingTest extends TestCase {
 
         wait(call(function () use ($request, $fields, $metadata) {
             /** @var Form $form */
-            $form = yield (new BufferingParser($request))->parseForm();
+            $form = yield parseForm($request);
 
             foreach ($fields as $key => $value) {
                 $this->assertSame($form->getValueArray($key), $value);
