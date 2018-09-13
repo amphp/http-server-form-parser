@@ -6,7 +6,8 @@ use Amp\ByteStream\InMemoryStream;
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\Payload;
 
-final class StreamedField extends Payload {
+final class StreamedField extends Payload
+{
     /** @var string */
     private $name;
 
@@ -22,26 +23,31 @@ final class StreamedField extends Payload {
      * @param string           $mimeType
      * @param string|null      $filename
      */
-    public function __construct(string $name, InputStream $stream = null, string $mimeType = "text/plain", string $filename = null) {
+    public function __construct(string $name, InputStream $stream = null, string $mimeType = "text/plain", string $filename = null)
+    {
         parent::__construct($stream ?? new InMemoryStream);
         $this->name = $name;
         $this->mimeType = $mimeType;
         $this->filename = $filename;
     }
 
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function getMimeType(): string {
+    public function getMimeType(): string
+    {
         return $this->mimeType;
     }
 
-    public function getFilename() {
+    public function getFilename()
+    {
         return $this->filename;
     }
 
-    public function isFile(): bool {
+    public function isFile(): bool
+    {
         return $this->filename !== null;
     }
 }

@@ -6,7 +6,6 @@ use Amp\ByteStream\InMemoryStream;
 use Amp\ByteStream\IteratorStream;
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\FormParser\Form;
-use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestBody;
@@ -17,7 +16,8 @@ use function Amp\call;
 use function Amp\Http\Server\FormParser\parseForm;
 use function Amp\Promise\wait;
 
-class ParsingTest extends TestCase {
+class ParsingTest extends TestCase
+{
     /**
      * @param string $header
      * @param string $data
@@ -26,7 +26,8 @@ class ParsingTest extends TestCase {
      *
      * @dataProvider requestBodies
      */
-    public function testBufferedDecoding(string $header, string $data, array $fields, array $files) {
+    public function testBufferedDecoding(string $header, string $data, array $fields, array $files)
+    {
         $headers = [];
         $headers["content-type"] = [$header];
         $body = new RequestBody(new InMemoryStream($data));
@@ -56,7 +57,8 @@ class ParsingTest extends TestCase {
         }));
     }
 
-    public function requestBodies(): array {
+    public function requestBodies(): array
+    {
         $return = [];
 
         // 0 --- basic request -------------------------------------------------------------------->
@@ -144,7 +146,8 @@ MULTIPART;
      *
      * @dataProvider streamedRequestBodies
      */
-    public function testStreamedDecoding(string $header, string $data, array $fields) {
+    public function testStreamedDecoding(string $header, string $data, array $fields)
+    {
         $headers = [];
         $headers["content-type"] = [$header];
         $body = new RequestBody(new IteratorStream(Iterator\fromIterable([$data])));
@@ -171,7 +174,8 @@ MULTIPART;
         $this->assertSame(\count($fields), $key);
     }
 
-    public function streamedRequestBodies(): array {
+    public function streamedRequestBodies(): array
+    {
         $return = [];
 
         // 0 --- basic request -------------------------------------------------------------------->
