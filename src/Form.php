@@ -24,6 +24,8 @@ final class Form {
     /**
      * Gets the first field value with a given name or null, if no such field exists.
      *
+     * File fields are not returned by this method.
+     *
      * @param string $name
      *
      * @return string|null
@@ -38,6 +40,8 @@ final class Form {
 
     /**
      * Gets all field values with a given name.
+     *
+     * File fields are not returned by this method.
      *
      * @param string $name
      *
@@ -55,6 +59,8 @@ final class Form {
 
     /**
      * Gets all field values.
+     *
+     * File fields are not returned by this method.
      *
      * @return string[][]
      */
