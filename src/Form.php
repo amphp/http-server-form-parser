@@ -2,7 +2,8 @@
 
 namespace Amp\Http\Server\FormParser;
 
-final class Form {
+final class Form
+{
     /** @var string[][] */
     private $fields;
 
@@ -16,7 +17,8 @@ final class Form {
      * @param string[][] $fields
      * @param File[][]   $files
      */
-    public function __construct(array $fields, array $files = []) {
+    public function __construct(array $fields, array $files = [])
+    {
         $this->fields = $fields;
         $this->files = $files;
     }
@@ -30,7 +32,8 @@ final class Form {
      *
      * @return string|null
      */
-    public function getValue(string $name) {
+    public function getValue(string $name)
+    {
         if (!isset($this->fields[$name][0])) {
             return null;
         }
@@ -47,7 +50,8 @@ final class Form {
      *
      * @return string[]
      */
-    public function getValueArray(string $name): array {
+    public function getValueArray(string $name): array
+    {
         $values = [];
 
         foreach ($this->fields[$name] ?? [] as $field) {
@@ -64,7 +68,8 @@ final class Form {
      *
      * @return string[][]
      */
-    public function getValues(): array {
+    public function getValues(): array
+    {
         return $this->fields;
     }
 
@@ -75,7 +80,8 @@ final class Form {
      *
      * @return bool
      */
-    public function hasFile(string $name): bool {
+    public function hasFile(string $name): bool
+    {
         return isset($this->files[$name][0]);
     }
 
@@ -86,7 +92,8 @@ final class Form {
      *
      * @return File|null
      */
-    public function getFile(string $name) {
+    public function getFile(string $name)
+    {
         return $this->files[$name][0] ?? null;
     }
 
@@ -97,7 +104,8 @@ final class Form {
      *
      * @return File[]
      */
-    public function getFileArray(string $name): array {
+    public function getFileArray(string $name): array
+    {
         return $this->files[$name] ?? [];
     }
 
@@ -106,7 +114,8 @@ final class Form {
      *
      * @return string[]
      */
-    public function getNames(): array {
+    public function getNames(): array
+    {
         return $this->names ?? $this->names = \array_map("strval", \array_keys($this->fields));
     }
 }

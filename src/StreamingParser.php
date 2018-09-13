@@ -9,20 +9,23 @@ use Amp\Http\Server\Request;
 use Amp\Iterator;
 use function Amp\asyncCall;
 
-final class StreamingParser {
+final class StreamingParser
+{
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
     private $fieldCountLimit;
 
-    public function __construct(int $fieldCountLimit = null) {
+    public function __construct(int $fieldCountLimit = null)
+    {
         $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
     }
 
-    public function parseForm(Request $request): Iterator {
+    public function parseForm(Request $request): Iterator
+    {
         $type = $request->getHeader("content-type");
         $boundary = null;
 
-        if ($type !== null && strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
-            if (!preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
+        if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
+            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
                 return Iterator\fromIterable([]);
             }
 
@@ -62,7 +65,8 @@ final class StreamingParser {
      * @return \Generator
      * @throws \Throwable
      */
-    private function incrementalBoundaryParse(Emitter $emitter, InputStream $body, string $boundary): \Generator {
+    private function incrementalBoundaryParse(Emitter $emitter, InputStream $body, string $boundary): \Generator
+    {
         $fieldCount = 0;
 
         try {
@@ -79,16 +83,16 @@ final class StreamingParser {
             }
 
             $offset = \strlen($boundarySeparator);
-            if (strncmp($buffer, $boundarySeparator, $offset)) {
+            if (\strncmp($buffer, $boundarySeparator, $offset)) {
                 throw new ParseException("Invalid boundary");
             }
 
             $boundarySeparator = "\r\n$boundarySeparator";
 
-            while (substr_compare($buffer, "--\r\n", $offset)) {
+            while (\substr_compare($buffer, "--\r\n", $offset)) {
                 $offset += 2;
 
-                while (($end = strpos($buffer, "\r\n\r\n", $offset)) === false) {
+                while (($end = \strpos($buffer, "\r\n\r\n", $offset)) === false) {
                     $buffer .= $chunk = yield $body->read();
 
                     if ($chunk === null) {
@@ -102,7 +106,7 @@ final class StreamingParser {
 
                 $headers = [];
 
-                foreach (\explode("\r\n", substr($buffer, $offset, $end - $offset)) as $header) {
+                foreach (\explode("\r\n", \substr($buffer, $offset, $end - $offset)) as $header) {
                     $split = \explode(":", $header, 2);
 
                     if (!isset($split[1])) {
@@ -112,7 +116,7 @@ final class StreamingParser {
                     $headers[\strtolower($split[0])] = \trim($split[1]);
                 }
 
-                $count = preg_match(
+                $count = \preg_match(
                     '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]+)"))+\s*$#',
                     $headers["content-disposition"] ?? "",
                     $matches
@@ -183,7 +187,8 @@ final class StreamingParser {
      *
      * @throws \Throwable
      */
-    private function incrementalFieldParse(Emitter $emitter, InputStream $body): \Generator {
+    private function incrementalFieldParse(Emitter $emitter, InputStream $body): \Generator
+    {
         $fieldCount = 0;
 
         try {

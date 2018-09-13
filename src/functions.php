@@ -12,7 +12,8 @@ use Amp\Promise;
  *
  * @return Promise<Form>
  */
-function parseForm(Request $request): Promise {
+function parseForm(Request $request): Promise
+{
     static $parser;
 
     if ($parser === null) {

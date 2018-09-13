@@ -11,11 +11,13 @@ use Amp\Success;
  * This class parses submitted forms from incoming request bodies in application/x-www-form-urlencoded and
  * multipart/form-data format.
  */
-final class BufferingParser {
+final class BufferingParser
+{
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
     private $fieldCountLimit;
 
-    public function __construct(int $fieldCountLimit = null) {
+    public function __construct(int $fieldCountLimit = null)
+    {
         $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
     }
 
@@ -28,12 +30,13 @@ final class BufferingParser {
      *
      * @return Promise
      */
-    public function parseForm(Request $request): Promise {
+    public function parseForm(Request $request): Promise
+    {
         $type = $request->getHeader("content-type");
         $boundary = null;
 
-        if ($type !== null && strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
-            if (!preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
+        if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
+            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
                 return new Success(new Form([]));
             }
 
@@ -67,7 +70,8 @@ final class BufferingParser {
      * @return Form
      * @throws ParseException
      */
-    private function parseBody(string $body, string $boundary = null): Form {
+    private function parseBody(string $body, string $boundary = null): Form
+    {
         // If there's no boundary, we're in urlencoded mode.
         if ($boundary === null) {
             $fields = [];
@@ -97,7 +101,7 @@ final class BufferingParser {
 
         $exp = \explode("\r\n--$boundary\r\n", $body);
         $exp[0] = \substr($exp[0], \strlen($boundary) + 4);
-        $exp[\count($exp) - 1] = \substr(end($exp), 0, -\strlen($boundary) - 8);
+        $exp[\count($exp) - 1] = \substr(\end($exp), 0, -\strlen($boundary) - 8);
 
         foreach ($exp as $entry) {
             list($rawHeaders, $text) = \explode("\r\n\r\n", $entry, 2);
