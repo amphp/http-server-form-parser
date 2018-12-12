@@ -2,10 +2,10 @@
 
 namespace Amp\Http\Server\FormParser;
 
-use Amp\Deferred;
 use Amp\Http\Server\Request;
 use Amp\Promise;
 use Amp\Success;
+use function Amp\call;
 
 /**
  * This class parses submitted forms from incoming request bodies in application/x-www-form-urlencoded and
@@ -46,21 +46,9 @@ final class BufferingParser
 
         $body = $request->getBody();
 
-        $deferred = new Deferred;
-
-        $body->buffer()->onResolve(function ($error, $value) use ($deferred, $boundary) {
-            if ($error) {
-                $deferred->fail($error);
-            } else {
-                try {
-                    $deferred->resolve($this->parseBody($value, $boundary));
-                } catch (ParseException $e) {
-                    $deferred->fail($e);
-                }
-            }
+        return call(function () use ($body, $boundary) {
+            return $this->parseBody(yield $body->buffer(), $boundary);
         });
-
-        return $deferred->promise();
     }
 
     /**
