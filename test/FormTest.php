@@ -15,5 +15,26 @@ class FormTest extends TestCase
         ]);
 
         $this->assertSame(["12", "foo"], $form->getNames());
+        $this->assertSame("bar", $form->getValue("foo"));
+        $this->assertSame(["bar"], $form->getValueArray("foo"));
+        $this->assertNull($form->getValue("not_found_key"));
+        $this->assertSame([
+            12 => ["21"],
+            "foo" => ["bar"],
+        ], $form->getValues());
+    }
+
+    public function testFormWithFiles()
+    {
+        $form = new Form([
+            12 => ["12"],
+        ], [
+            "file" => ["file_path"],
+        ]);
+
+        $this->assertSame("file_path", $form->getFile("file"));
+        $this->assertSame(["file_path"], $form->getFileArray("file"));
+        $this->assertNull($form->getFile("file_not_found"));
+        $this->assertTrue($form->hasFile("file"));
     }
 }
