@@ -61,33 +61,20 @@ final class BufferingParser
      */
     private function parseBody(string $body, string $boundary = null): Form
     {
-        $fieldCount = 0;
-
         // If there's no boundary, we're in urlencoded mode.
         if ($boundary === null) {
             $fields = [];
 
-            while ($body !== "") {
-                if (($position = \strpos($body, "&")) === false) {
-                    $position = \strlen($body);
-                }
-
-                if (++$fieldCount === $this->fieldCountLimit) {
-                    throw new ParseException("Maximum number of variables exceeded");
-                }
-
-                $pair = \substr($body, 0, $position);
-                $body = (string) \substr($body, $position + 1);
-
+            foreach (\explode("&", $body, $this->fieldCountLimit) as $pair) {
                 $pair = \explode("=", $pair, 2);
                 $field = \urldecode($pair[0]);
                 $value = \urldecode($pair[1] ?? "");
 
-                if ($field === "") {
-                    continue;
-                }
-
                 $fields[$field][] = $value;
+            }
+
+            if (\strpos($value ?? "", "&") !== false) {
+                throw new ParseException("Maximum number of variables exceeded");
             }
 
             return new Form($fields);
@@ -95,38 +82,27 @@ final class BufferingParser
 
         $fields = $files = [];
 
-        $end = "--$boundary--\r\n";
+        // RFC 7578, RFC 2046 Section 5.1.1
+        if (\strncmp($body, "--$boundary\r\n", \strlen($boundary) + 4) !== 0) {
+            return new Form([]);
+        }
 
-        while ($body !== $end) {
-            // RFC 7578, RFC 2046 Section 5.1.1
-            if (\strncmp($body, "--$boundary\r\n", \strlen($boundary) + 4) !== 0) {
-                throw new ParseException("Invalid boundry format");
-            }
+        $exp = \explode("\r\n--$boundary\r\n", $body, $this->fieldCountLimit);
+        $exp[0] = \substr($exp[0], \strlen($boundary) + 4);
+        $exp[\count($exp) - 1] = \substr(\end($exp), 0, -\strlen($boundary) - 8);
 
-            $body = \substr($body, \strlen($boundary) + 4);
-
-            if (($position = \strpos($body, "--$boundary")) === false) {
-                throw new ParseException("Could not locate part boundary");
-            }
-
-            $entry = \substr($body, 0, $position - 2);
-            $body = \substr($body, $position);
-
-            if (++$fieldCount === $this->fieldCountLimit) {
-                throw new ParseException("Maximum number of variables exceeded");
-            }
-
-            if (($headerPos = \strpos($entry, "\r\n\r\n")) === false) {
+        foreach ($exp as $entry) {
+            if (($position = \strpos($entry, "\r\n\r\n")) === false) {
                 throw new ParseException("No header/body boundry found");
             }
 
             try {
-                $headers = Rfc7230::parseHeaders(\substr($entry, 0, $headerPos + 2));
+                $headers = Rfc7230::parseHeaders(\substr($entry, 0, $position + 2));
             } catch (InvalidHeaderException $e) {
                 throw new ParseException("Invalid headers in body part", 0, $e);
             }
 
-            $entry = \substr($entry, $headerPos + 4);
+            $entry = \substr($entry, $position + 4);
 
             $count = \preg_match(
                 '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]+)"))+\s*$#',
@@ -148,6 +124,10 @@ final class BufferingParser
             } else {
                 $fields[$name][] = $entry;
             }
+        }
+
+        if (\strpos($entry ?? "", "--$boundary") !== false) {
+            throw new ParseException("Maximum number of variables exceeded");
         }
 
         return new Form($fields, $files);
