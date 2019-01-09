@@ -93,7 +93,7 @@ final class BufferingParser
 
         foreach ($exp as $entry) {
             if (($position = \strpos($entry, "\r\n\r\n")) === false) {
-                throw new ParseException("No header/body boundry found");
+                throw new ParseException("No header/body boundary found");
             }
 
             try {
