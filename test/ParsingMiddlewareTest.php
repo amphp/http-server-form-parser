@@ -49,4 +49,16 @@ class ParsingMiddlewareTest extends TestCase
 
         wait($handler->handleRequest($request));
     }
+
+    public function testNone()
+    {
+        $handler = stack(new CallableRequestHandler(function (Request $request) {
+            $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
+            $this->assertSame('{}', yield $request->getBody()->buffer());
+        }), new ParsingMiddleware);
+
+        $request = new Request($this->createMock(Client::class), 'GET', Uri\Http::createFromString('/'), [], '{}');
+
+        wait($handler->handleRequest($request));
+    }
 }
