@@ -72,10 +72,6 @@ final class BufferingParser
                     $position = \strlen($body);
                 }
 
-                if ($position === 0) {
-                    throw new ParseException("Empty field/value pair");
-                }
-
                 if (++$fieldCount === $this->fieldCountLimit) {
                     throw new ParseException("Maximum number of variables exceeded");
                 }
@@ -88,7 +84,7 @@ final class BufferingParser
                 $value = \urldecode($pair[1] ?? "");
 
                 if ($field === "") {
-                    throw new ParseException("Empty field name");
+                    continue;
                 }
 
                 $fields[$field][] = $value;
