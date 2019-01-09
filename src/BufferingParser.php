@@ -2,6 +2,8 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\Http\InvalidHeaderException;
+use Amp\Http\Rfc7230;
 use Amp\Http\Server\Request;
 use Amp\Promise;
 use Amp\Success;
@@ -41,7 +43,6 @@ final class BufferingParser
             }
 
             $boundary = $matches[2];
-            unset($matches);
         }
 
         $body = $request->getBody();
@@ -60,19 +61,35 @@ final class BufferingParser
      */
     private function parseBody(string $body, string $boundary = null): Form
     {
+        $fieldCount = 0;
+
         // If there's no boundary, we're in urlencoded mode.
         if ($boundary === null) {
             $fields = [];
-            $fieldCount = 0;
 
-            foreach (\explode("&", $body) as $pair) {
+            while ($body !== "") {
+                if (($position = \strpos($body, "&")) === false) {
+                    $position = \strlen($body);
+                }
+
+                if ($position === 0) {
+                    throw new ParseException("Empty field/value pair");
+                }
+
                 if (++$fieldCount === $this->fieldCountLimit) {
                     throw new ParseException("Maximum number of variables exceeded");
                 }
 
+                $pair = \substr($body, 0, $position);
+                $body = (string) \substr($body, $position + 1);
+
                 $pair = \explode("=", $pair, 2);
                 $field = \urldecode($pair[0]);
                 $value = \urldecode($pair[1] ?? "");
+
+                if ($field === "") {
+                    throw new ParseException("Empty field name");
+                }
 
                 $fields[$field][] = $value;
             }
@@ -82,46 +99,58 @@ final class BufferingParser
 
         $fields = $files = [];
 
-        // RFC 7578, RFC 2046 Section 5.1.1
-        if (\strncmp($body, "--$boundary\r\n", \strlen($boundary) + 4) !== 0) {
-            return new Form([]);
-        }
+        $end = "--$boundary--\r\n";
 
-        $exp = \explode("\r\n--$boundary\r\n", $body);
-        $exp[0] = \substr($exp[0], \strlen($boundary) + 4);
-        $exp[\count($exp) - 1] = \substr(\end($exp), 0, -\strlen($boundary) - 8);
-
-        foreach ($exp as $entry) {
-            list($rawHeaders, $text) = \explode("\r\n\r\n", $entry, 2);
-            $headers = [];
-
-            foreach (\explode("\r\n", $rawHeaders) as $header) {
-                $split = \explode(":", $header, 2);
-                if (!isset($split[1])) {
-                    return new Form([]);
-                }
-                $headers[\strtolower($split[0])] = \trim($split[1]);
+        while ($body !== $end) {
+            // RFC 7578, RFC 2046 Section 5.1.1
+            if (\strncmp($body, "--$boundary\r\n", \strlen($boundary) + 4) !== 0) {
+                throw new ParseException("Invalid boundry format");
             }
+
+            $body = \substr($body, \strlen($boundary) + 4);
+
+            if (($position = \strpos($body, "--$boundary")) === false) {
+                throw new ParseException("Could not locate part boundary");
+            }
+
+            $entry = \substr($body, 0, $position - 2);
+            $body = \substr($body, $position);
+
+            if (++$fieldCount === $this->fieldCountLimit) {
+                throw new ParseException("Maximum number of variables exceeded");
+            }
+
+            if (($headerPos = \strpos($entry, "\r\n\r\n")) === false) {
+                throw new ParseException("No header/body boundry found");
+            }
+
+            try {
+                $headers = Rfc7230::parseHeaders(\substr($entry, 0, $headerPos + 2));
+            } catch (InvalidHeaderException $e) {
+                throw new ParseException("Invalid headers in body part", 0, $e);
+            }
+
+            $entry = \substr($entry, $headerPos + 4);
 
             $count = \preg_match(
                 '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]+)"))+\s*$#',
-                $headers["content-disposition"] ?? "",
+                $headers["content-disposition"][0] ?? "",
                 $matches
             );
 
             if (!$count || !isset($matches[1])) {
-                return new Form([]);
+                throw new ParseException("Missing or invalid content disposition");
             }
 
             // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
 
             $name = $matches[1];
-            $contentType = $headers["content-type"] ?? "text/plain";
+            $contentType = $headers["content-type"][0] ?? "text/plain";
 
             if (isset($matches[2])) {
-                $files[$name][] = new File($matches[2], $text, $contentType);
+                $files[$name][] = new File($matches[2], $entry, $contentType);
             } else {
-                $fields[$name][] = $text;
+                $fields[$name][] = $entry;
             }
         }
 

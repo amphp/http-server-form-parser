@@ -5,6 +5,8 @@ namespace Amp\Http\Server\FormParser;
 use Amp\ByteStream\InputStream;
 use Amp\ByteStream\IteratorStream;
 use Amp\Emitter;
+use Amp\Http\InvalidHeaderException;
+use Amp\Http\Rfc7230;
 use Amp\Http\Server\Request;
 use Amp\Iterator;
 use function Amp\asyncCall;
@@ -30,7 +32,6 @@ final class StreamingParser
             }
 
             $boundary = $matches[2];
-            unset($matches);
         }
 
         $body = $request->getBody();
@@ -104,21 +105,15 @@ final class StreamingParser
                     throw new ParseException("Maximum number of variables exceeded");
                 }
 
-                $headers = [];
-
-                foreach (\explode("\r\n", \substr($buffer, $offset, $end - $offset)) as $header) {
-                    $split = \explode(":", $header, 2);
-
-                    if (!isset($split[1])) {
-                        throw new ParseException("Invalid content header within multipart form");
-                    }
-
-                    $headers[\strtolower($split[0])] = \trim($split[1]);
+                try {
+                    $headers = Rfc7230::parseHeaders(\substr($buffer, $offset, $end + 2 - $offset));
+                } catch (InvalidHeaderException $e) {
+                    throw new ParseException("Invalid headers in body part", 0, $e);
                 }
 
                 $count = \preg_match(
                     '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]+)"))+\s*$#',
-                    $headers["content-disposition"] ?? "",
+                    $headers["content-disposition"][0] ?? "",
                     $matches
                 );
 
@@ -132,7 +127,7 @@ final class StreamingParser
 
                 $dataEmitter = new Emitter;
                 $stream = new IteratorStream($dataEmitter->iterate());
-                $field = new StreamedField($fieldName, $stream, $headers["content-type"] ?? "text/plain", $matches[2] ?? null);
+                $field = new StreamedField($fieldName, $stream, $headers["content-type"][0] ?? "text/plain", $matches[2] ?? null);
 
                 $emitPromise = $emitter->emit($field);
 
