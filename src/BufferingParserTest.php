@@ -4,9 +4,9 @@ namespace Amp\Http\Server\FormParser;
 
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\Request;
-use function Amp\Promise\wait;
 use League\Uri\Http;
 use PHPUnit\Framework\TestCase;
+use function Amp\Promise\wait;
 
 class BufferingParserTest extends TestCase
 {
@@ -18,5 +18,4 @@ class BufferingParserTest extends TestCase
 
         $this->assertSame('&', $form->getValue('foobar'));
     }
-
 }
