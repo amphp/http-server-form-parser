@@ -73,7 +73,7 @@ final class BufferingParser
                 $fields[$field][] = $value;
             }
 
-            if (\strpos($value ?? "", "&") !== false) {
+            if (\strpos($pair[1] ?? "", "&") !== false) {
                 throw new ParseException("Maximum number of variables exceeded");
             }
 
