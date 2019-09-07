@@ -110,6 +110,16 @@ final class Form
     }
 
     /**
+     * Gets all files.
+     *
+     * @return File[][]
+     */
+    public function getFiles(): array
+    {
+        return $this->files;
+    }
+
+    /**
      * Returns the names of all fields.
      *
      * @return string[]

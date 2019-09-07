@@ -2,6 +2,7 @@
 
 namespace Amp\Http\Server\FormParser\Test;
 
+use Amp\Http\Server\FormParser\File;
 use Amp\Http\Server\FormParser\Form;
 use PHPUnit\Framework\TestCase;
 
@@ -26,14 +27,17 @@ class FormTest extends TestCase
 
     public function testFormWithFiles()
     {
+        $file = new File("file_path", "contents");
+
         $form = new Form([
             12 => ["12"],
         ], [
-            "file" => ["file_path"],
+            "file" => [$file],
         ]);
 
-        $this->assertSame("file_path", $form->getFile("file"));
-        $this->assertSame(["file_path"], $form->getFileArray("file"));
+        $this->assertSame(["file" => [$file]], $form->getFiles());
+        $this->assertSame($file, $form->getFile("file"));
+        $this->assertSame([$file], $form->getFileArray("file"));
         $this->assertNull($form->getFile("file_not_found"));
         $this->assertTrue($form->hasFile("file"));
     }
