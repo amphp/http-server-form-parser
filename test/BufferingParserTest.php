@@ -1,8 +1,9 @@
 <?php
 
-namespace Amp\Http\Server\FormParser;
+namespace Amp\Http\Server\FormParser\Test;
 
 use Amp\Http\Server\Driver\Client;
+use Amp\Http\Server\FormParser\BufferingParser;
 use Amp\Http\Server\Request;
 use League\Uri\Http;
 use PHPUnit\Framework\TestCase;
@@ -14,7 +15,7 @@ class BufferingParserTest extends TestCase
     {
         $body = "foobar=" . \urlencode("&");
         $request = new Request($this->createMock(Client::class), 'GET', Http::createFromString('/'), [], $body);
-        $form = wait((new BufferingParser)->parseForm($request));
+        $form = wait((new BufferingParser())->parseForm($request));
 
         $this->assertSame('&', $form->getValue('foobar'));
     }
