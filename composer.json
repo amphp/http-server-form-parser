@@ -37,8 +37,8 @@
     },
     "require-dev": {
         "amphp/php-cs-fixer-config": "dev-master",
-        "amphp/phpunit-util": "^1",
-        "phpunit/phpunit": "^6"
+        "amphp/phpunit-util": "^1.1.2",
+        "phpunit/phpunit": "^8 || ^7 || ^6"
     },
     "autoload": {
         "psr-4": {

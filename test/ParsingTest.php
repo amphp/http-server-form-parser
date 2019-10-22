@@ -10,13 +10,11 @@ use Amp\Http\Server\FormParser\StreamingParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestBody;
 use Amp\Iterator;
+use Amp\PHPUnit\AsyncTestCase;
 use League\Uri;
-use PHPUnit\Framework\TestCase;
-use function Amp\call;
 use function Amp\Http\Server\FormParser\parseForm;
-use function Amp\Promise\wait;
 
-class ParsingTest extends TestCase
+class ParsingTest extends AsyncTestCase
 {
     /**
      * @param string $header
@@ -26,7 +24,7 @@ class ParsingTest extends TestCase
      *
      * @dataProvider requestBodies
      */
-    public function testBufferedDecoding(string $header, string $data, array $fields, array $files)
+    public function testBufferedDecoding(string $header, string $data, array $fields, array $files): \Generator
     {
         $headers = [];
         $headers["content-type"] = [$header];
@@ -35,26 +33,24 @@ class ParsingTest extends TestCase
         $client = $this->createMock(Client::class);
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
 
-        wait(call(function () use ($request, $fields, $files) {
-            /** @var Form $form */
-            $form = yield parseForm($request);
+        /** @var Form $form */
+        $form = yield parseForm($request);
 
-            foreach ($fields as $key => $value) {
-                $this->assertSame($form->getValueArray($key), $value);
+        foreach ($fields as $key => $value) {
+            $this->assertSame($form->getValueArray($key), $value);
+        }
+
+        foreach ($files as $fieldName => $expectedFiles) {
+            $this->assertTrue($form->hasFile($fieldName));
+            $parsedFiles = $form->getFileArray($fieldName);
+            $this->assertCount(\count($expectedFiles), $parsedFiles);
+
+            foreach ($parsedFiles as $key => $parsedFile) {
+                $this->assertSame($expectedFiles[$key]["filename"], $parsedFile->getName());
+                $this->assertSame($expectedFiles[$key]["mime"], $parsedFile->getMimeType());
+                $this->assertSame($expectedFiles[$key]["content"], $parsedFile->getContents());
             }
-
-            foreach ($files as $fieldName => $expectedFiles) {
-                $this->assertTrue($form->hasFile($fieldName));
-                $parsedFiles = $form->getFileArray($fieldName);
-                $this->assertCount(\count($expectedFiles), $parsedFiles);
-
-                foreach ($parsedFiles as $key => $parsedFile) {
-                    $this->assertSame($expectedFiles[$key]["filename"], $parsedFile->getName());
-                    $this->assertSame($expectedFiles[$key]["mime"], $parsedFile->getMimeType());
-                    $this->assertSame($expectedFiles[$key]["content"], $parsedFile->getContents());
-                }
-            }
-        }));
+        }
     }
 
     public function requestBodies(): array
@@ -146,7 +142,7 @@ MULTIPART;
      *
      * @dataProvider streamedRequestBodies
      */
-    public function testStreamedDecoding(string $header, string $data, array $fields)
+    public function testStreamedDecoding(string $header, string $data, array $fields): \Generator
     {
         $headers = [];
         $headers["content-type"] = [$header];
@@ -156,20 +152,18 @@ MULTIPART;
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
         $key = 0;
 
-        wait(call(function () use ($request, $fields, &$key) {
-            $iterator = (new StreamingParser)->parseForm($request);
+        $iterator = (new StreamingParser)->parseForm($request);
 
-            while (yield $iterator->advance()) {
-                $parsedField = $iterator->getCurrent();
-                $expectedField = $fields[$key++];
-                $this->assertSame($expectedField["name"], $parsedField->getName());
-                $this->assertSame($expectedField["mime_type"], $parsedField->getMimeType());
-                $this->assertSame($expectedField["filename"], $parsedField->getFilename());
-                $this->assertSame($expectedField["content"], yield $parsedField->buffer());
-            }
+        while (yield $iterator->advance()) {
+            $parsedField = $iterator->getCurrent();
+            $expectedField = $fields[$key++];
+            $this->assertSame($expectedField["name"], $parsedField->getName());
+            $this->assertSame($expectedField["mime_type"], $parsedField->getMimeType());
+            $this->assertSame($expectedField["filename"], $parsedField->getFilename());
+            $this->assertSame($expectedField["content"], yield $parsedField->buffer());
+        }
 
-            $this->assertFalse(yield $iterator->advance());
-        }));
+        $this->assertFalse(yield $iterator->advance());
 
         $this->assertSame(\count($fields), $key);
     }
