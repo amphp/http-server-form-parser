@@ -105,7 +105,7 @@ final class BufferingParser
             $entry = \substr($entry, $position + 4);
 
             $count = \preg_match(
-                '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]+)"))+\s*$#',
+                '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]*)"))+\s*$#',
                 $headers["content-disposition"][0] ?? "",
                 $matches
             );
