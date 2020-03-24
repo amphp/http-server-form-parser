@@ -6,6 +6,7 @@ use Amp\ByteStream\InMemoryStream;
 use Amp\ByteStream\IteratorStream;
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\FormParser\Form;
+use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestBody;
@@ -146,7 +147,7 @@ MULTIPART;
     {
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new RequestBody(new IteratorStream(Iterator\fromIterable([$data])));
+        $body = new RequestBody(new IteratorStream(Iterator\fromIterable(\str_split($data, 8192))));
 
         $client = $this->createMock(Client::class);
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
@@ -156,6 +157,7 @@ MULTIPART;
 
         while (yield $iterator->advance()) {
             $parsedField = $iterator->getCurrent();
+            \assert($parsedField instanceof StreamedField);
             $expectedField = $fields[$key++];
             $this->assertSame($expectedField["name"], $parsedField->getName());
             $this->assertSame($expectedField["mime_type"], $parsedField->getMimeType());
@@ -211,30 +213,31 @@ MULTIPART;
 
         // 2 --- multipart request with file ------------------------------------------------------>
 
+        $text = \file_get_contents(__DIR__ . '/Fixtures/test.txt');
+        $html = \file_get_contents(__DIR__ . '/Fixtures/test.html');
+
         $input = <<<MULTIPART
 -----------------------------9051914041544843365972754266\r
 Content-Disposition: form-data; name="text"\r
 \r
 text default\r
 -----------------------------9051914041544843365972754266\r
-Content-Disposition: form-data; name="file"; filename="a.txt"\r
+Content-Disposition: form-data; name="file"; filename="test.txt"\r
 Content-Type: text/plain\r
 \r
-Content of a.txt.
-\r
+$text\r
 -----------------------------9051914041544843365972754266\r
-Content-Disposition: form-data; name="file"; filename="a.html"\r
+Content-Disposition: form-data; name="file"; filename="test.html"\r
 Content-Type: text/html\r
 \r
-<!DOCTYPE html><title>Content of a.html.</title>
-\r
+$html\r
 -----------------------------9051914041544843365972754266--\r\n
 MULTIPART;
 
         $return[] = ["multipart/form-data; boundary=---------------------------9051914041544843365972754266", $input, [
             ["name" => "text", "content" => "text default", "mime_type" => "text/plain", "filename" => null],
-            ["name" => "file", "content" => "Content of a.txt.\n", "mime_type" => "text/plain", "filename" => "a.txt"],
-            ["name" => "file", "content" => "<!DOCTYPE html><title>Content of a.html.</title>\n", "mime_type" => "text/html", "filename" => "a.html"],
+            ["name" => "file", "content" => $text, "mime_type" => "text/plain", "filename" => "test.txt"],
+            ["name" => "file", "content" => $html, "mime_type" => "text/html", "filename" => "test.html"],
         ]];
 
         // x -------------------------------------------------------------------------------------->

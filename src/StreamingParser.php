@@ -132,21 +132,20 @@ final class StreamingParser
                 $emitPromise = $emitter->emit($field);
 
                 $buffer = \substr($buffer, $end + 4);
-                $offset = 0;
 
-                while (($end = \strpos($buffer, $boundarySeparator, $offset)) === false) {
+                while (($end = \strpos($buffer, $boundarySeparator)) === false) {
+                    if (\strlen($buffer) > \strlen($boundarySeparator)) {
+                        $position = \strlen($buffer) - \strlen($boundarySeparator);
+                        yield $dataEmitter->emit(\substr($buffer, 0, $position));
+                        $buffer = \substr($buffer, $position);
+                    }
+
                     $buffer .= $chunk = yield $body->read();
 
                     if ($chunk === null) {
                         $e = new ParseException("Request body ended unexpectedly");
                         $dataEmitter->fail($e);
                         throw $e;
-                    }
-
-                    if (\strlen($buffer) > \strlen($boundarySeparator)) {
-                        $offset = \strlen($buffer) - \strlen($boundarySeparator);
-                        yield $dataEmitter->emit(\substr($buffer, 0, $offset));
-                        $buffer = \substr($buffer, $offset);
                     }
                 }
 
