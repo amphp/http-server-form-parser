@@ -38,7 +38,7 @@
     "require-dev": {
         "amphp/php-cs-fixer-config": "dev-master",
         "amphp/phpunit-util": "^1.1.2",
-        "phpunit/phpunit": "^8 || ^7 || ^6"
+        "phpunit/phpunit": "^9 || ^8 || ^7 || ^6"
     },
     "autoload": {
         "psr-4": {
@@ -51,11 +51,6 @@
     "autoload-dev": {
         "psr-4": {
             "Amp\\Http\\Server\\FormParser\\Test\\": "test"
-        }
-    },
-    "config": {
-        "platform": {
-            "php": "7.0.13"
         }
     },
 	"scripts": {
