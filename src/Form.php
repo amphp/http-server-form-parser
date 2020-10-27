@@ -5,17 +5,17 @@ namespace Amp\Http\Server\FormParser;
 final class Form
 {
     /** @var string[][] */
-    private $fields;
+    private array $fields;
 
-    /** @var File[][] */
-    private $files;
+    /** @var BufferedFile[][] */
+    private array $files;
 
     /** @var string[] */
-    private $names;
+    private array $names;
 
     /**
-     * @param string[][] $fields
-     * @param File[][]   $files
+     * @param string[][]       $fields
+     * @param BufferedFile[][] $files
      */
     public function __construct(array $fields, array $files = [])
     {
@@ -32,7 +32,7 @@ final class Form
      *
      * @return string|null
      */
-    public function getValue(string $name)
+    public function getValue(string $name): ?string
     {
         if (!isset($this->fields[$name][0])) {
             return null;
@@ -90,9 +90,9 @@ final class Form
      *
      * @param string $name
      *
-     * @return File|null
+     * @return BufferedFile|null
      */
-    public function getFile(string $name)
+    public function getFile(string $name): ?BufferedFile
     {
         return $this->files[$name][0] ?? null;
     }
@@ -102,7 +102,7 @@ final class Form
      *
      * @param string $name
      *
-     * @return File[]
+     * @return BufferedFile[]
      */
     public function getFileArray(string $name): array
     {
@@ -112,7 +112,7 @@ final class Form
     /**
      * Gets all files.
      *
-     * @return File[][]
+     * @return BufferedFile[][]
      */
     public function getFiles(): array
     {

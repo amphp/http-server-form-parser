@@ -3,17 +3,16 @@
 namespace Amp\Http\Server\FormParser\Test;
 
 use Amp\ByteStream\InMemoryStream;
-use Amp\ByteStream\IteratorStream;
+use Amp\ByteStream\PipelineStream;
 use Amp\Http\Server\Driver\Client;
-use Amp\Http\Server\FormParser\Form;
+use Amp\Http\Server\FormParser\BufferingParser;
 use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestBody;
-use Amp\Iterator;
+use Amp\Pipeline;
 use Amp\PHPUnit\AsyncTestCase;
 use League\Uri;
-use function Amp\Http\Server\FormParser\parseForm;
 
 class ParsingTest extends AsyncTestCase
 {
@@ -25,7 +24,7 @@ class ParsingTest extends AsyncTestCase
      *
      * @dataProvider requestBodies
      */
-    public function testBufferedDecoding(string $header, string $data, array $fields, array $files): \Generator
+    public function testBufferedDecoding(string $header, string $data, array $fields, array $files): void
     {
         $headers = [];
         $headers["content-type"] = [$header];
@@ -34,8 +33,7 @@ class ParsingTest extends AsyncTestCase
         $client = $this->createMock(Client::class);
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
 
-        /** @var Form $form */
-        $form = yield parseForm($request);
+        $form = (new BufferingParser)->parseForm($request);
 
         foreach ($fields as $key => $value) {
             $this->assertSame($form->getValueArray($key), $value);
@@ -143,29 +141,30 @@ MULTIPART;
      *
      * @dataProvider streamedRequestBodies
      */
-    public function testStreamedDecoding(string $header, string $data, array $fields): \Generator
+    public function testStreamedDecoding(string $header, string $data, array $fields): void
     {
+        $this->ignoreLoopWatchers();
+
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new RequestBody(new IteratorStream(Iterator\fromIterable(\str_split($data, 8192))));
+        $body = new RequestBody(new PipelineStream(Pipeline\fromIterable(\str_split($data, 8192))));
 
         $client = $this->createMock(Client::class);
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
         $key = 0;
 
-        $iterator = (new StreamingParser)->parseForm($request);
+        $pipeline = (new StreamingParser)->parseForm($request);
 
-        while (yield $iterator->advance()) {
-            $parsedField = $iterator->getCurrent();
+        while ($parsedField = $pipeline->continue()) {
             \assert($parsedField instanceof StreamedField);
             $expectedField = $fields[$key++];
             $this->assertSame($expectedField["name"], $parsedField->getName());
             $this->assertSame($expectedField["mime_type"], $parsedField->getMimeType());
             $this->assertSame($expectedField["filename"], $parsedField->getFilename());
-            $this->assertSame($expectedField["content"], yield $parsedField->buffer());
+            $this->assertSame($expectedField["content"], $parsedField->buffer());
         }
 
-        $this->assertFalse(yield $iterator->advance());
+        $this->assertNull($pipeline->continue());
 
         $this->assertSame(\count($fields), $key);
     }

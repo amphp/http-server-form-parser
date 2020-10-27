@@ -5,9 +5,6 @@ namespace Amp\Http\Server\FormParser;
 use Amp\Http\InvalidHeaderException;
 use Amp\Http\Rfc7230;
 use Amp\Http\Server\Request;
-use Amp\Promise;
-use Amp\Success;
-use function Amp\call;
 
 /**
  * This class parses submitted forms from incoming request bodies in application/x-www-form-urlencoded and
@@ -16,7 +13,7 @@ use function Amp\call;
 final class BufferingParser
 {
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
-    private $fieldCountLimit;
+    private int $fieldCountLimit;
 
     public function __construct(int $fieldCountLimit = null)
     {
@@ -30,26 +27,22 @@ final class BufferingParser
      *
      * @param Request $request
      *
-     * @return Promise
+     * @return Form
      */
-    public function parseForm(Request $request): Promise
+    public function parseForm(Request $request): Form
     {
         $type = $request->getHeader("content-type");
         $boundary = null;
 
         if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
             if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                return new Success(new Form([]));
+                return new Form([]);
             }
 
             $boundary = $matches[2];
         }
 
-        $body = $request->getBody();
-
-        return call(function () use ($body, $boundary) {
-            return $this->parseBody(yield $body->buffer(), $boundary);
-        });
+        return $this->parseBody($request->getBody()->buffer(), $boundary);
     }
 
     /**
@@ -97,16 +90,21 @@ final class BufferingParser
             }
 
             try {
-                $headers = Rfc7230::parseHeaders(\substr($entry, 0, $position + 2));
+                $headers = Rfc7230::parseRawHeaders(\substr($entry, 0, $position + 2));
             } catch (InvalidHeaderException $e) {
                 throw new ParseException("Invalid headers in body part", 0, $e);
+            }
+
+            $headerMap = [];
+            foreach ($headers as [$key, $value]) {
+                $headerMap[\strtolower($key)][] = $value;
             }
 
             $entry = \substr($entry, $position + 4);
 
             $count = \preg_match(
                 '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]*)"))+\s*$#',
-                $headers["content-disposition"][0] ?? "",
+                $headerMap["content-disposition"][0] ?? "",
                 $matches
             );
 
@@ -117,10 +115,10 @@ final class BufferingParser
             // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
 
             $name = $matches[1];
-            $contentType = $headers["content-type"][0] ?? "text/plain";
+            $contentType = $headerMap["content-type"][0] ?? "text/plain";
 
             if (isset($matches[2])) {
-                $files[$name][] = new File($matches[2], $entry, $contentType);
+                $files[$name][] = new BufferedFile($matches[2] ?? '', $entry, $contentType, $headers);
             } else {
                 $fields[$name][] = $entry;
             }

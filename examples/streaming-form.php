@@ -19,59 +19,55 @@ use function Amp\ByteStream\getStdout;
 
 // Run this script, then visit http://localhost:1337/ in your browser.
 
-Amp\Loop::run(static function () {
-    $servers = [
-        Socket\Server::listen("0.0.0.0:1337"),
-        Socket\Server::listen("[::]:1337"),
-    ];
+$servers = [
+    Socket\Server::listen("0.0.0.0:1337"),
+    Socket\Server::listen("[::]:1337"),
+];
 
-    $logHandler = new StreamHandler(getStdout());
-    $logHandler->setFormatter(new ConsoleFormatter);
-    $logHandler->pushProcessor(new PsrLogMessageProcessor);
+$logHandler = new StreamHandler(getStdout());
+$logHandler->setFormatter(new ConsoleFormatter);
+$logHandler->pushProcessor(new PsrLogMessageProcessor);
 
-    $logger = new Logger('server');
-    $logger->pushHandler($logHandler);
+$logger = new Logger('server');
+$logger->pushHandler($logHandler);
 
-    $server = new HttpServer($servers, new CallableRequestHandler(static function (Request $request) {
-        if ($request->getUri()->getPath() === '/') {
-            $html = "<html lang='en'><form action='/form' method='POST' enctype='multipart/form-data'><input type='file' name='test'><button type='submit'>submit</button></form>";
+$server = new HttpServer($servers, new CallableRequestHandler(static function (Request $request): Response {
+    if ($request->getUri()->getPath() === '/') {
+        $html = "<html lang='en'><form action='/form' method='POST' enctype='multipart/form-data'><input type='file' name='test'><button type='submit'>submit</button></form>";
+
+        return new Response(Status::OK, [
+            "content-type" => "text/html; charset=utf-8",
+        ], $html);
+    }
+
+    $request->getBody()->increaseSizeLimit(120 * 1024 * 1024);
+
+    $parser = new StreamingParser;
+    $fields = $parser->parseForm($request);
+
+    /** @var StreamedField $field */
+    while ($field = $fields->continue()) {
+        if ($field->getName() === 'test') {
+            $html = "<html lang='en'><a href='/'>← back</a><br>sha1: " . \sha1($field->buffer()) . "</html>";
 
             return new Response(Status::OK, [
                 "content-type" => "text/html; charset=utf-8",
             ], $html);
         }
+    }
 
-        $request->getBody()->increaseSizeLimit(120 * 1024 * 1024);
+    $html = "<html lang='en'><a href='/'>← back</a><br>Not found...</html>";
 
-        $parser = new StreamingParser;
-        $fields = $parser->parseForm($request);
+    return new Response(Status::OK, [
+        "content-type" => "text/html; charset=utf-8",
+    ], $html);
+}), $logger);
 
-        while (yield $fields->advance()) {
-            /** @var StreamedField $field */
-            $field = $fields->getCurrent();
-            $bytes = yield $field->buffer();
+$server->start();
 
-            if ($field->getName() === 'test') {
-                $html = "<html lang='en'><a href='/'>← back</a><br>sha1: " . \sha1($bytes) . "<html>";
+// Await SIGINT, SIGTERM, or SIGSTOP to be received.
+$signal = Amp\signal(\SIGINT, \SIGTERM, \SIGSTOP);
 
-                return new Response(Status::OK, [
-                    "content-type" => "text/html; charset=utf-8",
-                ], $html);
-            }
-        }
+$logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
 
-        $html = "<html lang='en'><a href='/'>← back</a><br>Not found...</html>";
-
-        return new Response(Status::OK, [
-            "content-type" => "text/html; charset=utf-8",
-        ], $html);
-    }), $logger);
-
-    yield $server->start();
-
-    // Stop the server when SIGINT is received (this is technically optional, but it is best to call Server::stop()).
-    Amp\Loop::onSignal(\SIGINT, static function (string $watcherId) use ($server) {
-        Amp\Loop::cancel($watcherId);
-        yield $server->stop();
-    });
-});
+$server->stop();

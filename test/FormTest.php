@@ -2,13 +2,13 @@
 
 namespace Amp\Http\Server\FormParser\Test;
 
-use Amp\Http\Server\FormParser\File;
+use Amp\Http\Server\FormParser\BufferedFile;
 use Amp\Http\Server\FormParser\Form;
-use PHPUnit\Framework\TestCase;
+use Amp\PHPUnit\AsyncTestCase;
 
-class FormTest extends TestCase
+class FormTest extends AsyncTestCase
 {
-    public function testFormWithNumericFieldNames()
+    public function testFormWithNumericFieldNames(): void
     {
         $form = new Form([
             12 => ["21"],
@@ -25,9 +25,9 @@ class FormTest extends TestCase
         ], $form->getValues());
     }
 
-    public function testFormWithFiles()
+    public function testFormWithFiles(): void
     {
-        $file = new File("file_path", "contents");
+        $file = new BufferedFile("file_path", "contents");
 
         $form = new Form([
             12 => ["12"],

@@ -11,11 +11,11 @@ use League\Uri\Http;
 
 class BufferingParserTest extends AsyncTestCase
 {
-    public function testIssue6(): \Generator
+    public function testIssue6(): void
     {
         $body = "foobar=" . \urlencode("&");
         $request = new Request($this->createMock(Client::class), 'GET', Http::createFromString('/'), [], $body);
-        $form = yield (new BufferingParser())->parseForm($request);
+        $form = (new BufferingParser())->parseForm($request);
         \assert($form instanceof Form);
 
         $this->assertSame('&', $form->getValue('foobar'));

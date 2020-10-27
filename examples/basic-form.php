@@ -3,7 +3,6 @@
 
 require \dirname(__DIR__) . "/vendor/autoload.php";
 
-use Amp\Http\Server\FormParser\Form;
 use Amp\Http\Server\HttpServer;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\CallableRequestHandler;
@@ -19,42 +18,41 @@ use function Amp\Http\Server\FormParser\parseForm;
 
 // Run this script, then visit http://localhost:1337/ in your browser.
 
-Amp\Loop::run(static function () {
-    $servers = [
-        Socket\Server::listen("0.0.0.0:1337"),
-        Socket\Server::listen("[::]:1337"),
-    ];
+$servers = [
+    Socket\Server::listen("0.0.0.0:1337"),
+    Socket\Server::listen("[::]:1337"),
+];
 
-    $logHandler = new StreamHandler(getStdout());
-    $logHandler->setFormatter(new ConsoleFormatter);
-    $logHandler->pushProcessor(new PsrLogMessageProcessor);
+$logHandler = new StreamHandler(getStdout());
+$logHandler->setFormatter(new ConsoleFormatter);
+$logHandler->pushProcessor(new PsrLogMessageProcessor);
 
-    $logger = new Logger('server');
-    $logger->pushHandler($logHandler);
+$logger = new Logger('server');
+$logger->pushHandler($logHandler);
 
-    $server = new HttpServer($servers, new CallableRequestHandler(static function (Request $request) {
-        if ($request->getUri()->getPath() === '/') {
-            $html = "<html lang='en'><form action='/form' method='POST'><input type='text' name='test'><button type='submit'>submit</button></form>";
-
-            return new Response(Status::OK, [
-                "content-type" => "text/html; charset=utf-8",
-            ], $html);
-        }
-
-        /** @var Form $form */
-        $form = yield parseForm($request);
-        $html = "<html lang='en'><a href='/'>← back</a><br>" . \htmlspecialchars($form->getValue("test") ?? "Hello, World!") . '</html>';
+$server = new HttpServer($servers, new CallableRequestHandler(static function (Request $request): Response {
+    if ($request->getUri()->getPath() === '/') {
+        $html = "<html lang='en'><form action='/form' method='POST'><input type='text' name='test'><button type='submit'>submit</button></form>";
 
         return new Response(Status::OK, [
             "content-type" => "text/html; charset=utf-8",
         ], $html);
-    }), $logger);
+    }
 
-    yield $server->start();
+    $form = parseForm($request);
+    $html = "<html lang='en'><a href='/'>← back</a><br>" . \htmlspecialchars($form->getValue("test") ?? "Hello, World!") . '</html>';
 
-    // Stop the server when SIGINT is received (this is technically optional, but it is best to call Server::stop()).
-    Amp\Loop::onSignal(\SIGINT, static function (string $watcherId) use ($server) {
-        Amp\Loop::cancel($watcherId);
-        yield $server->stop();
-    });
-});
+    return new Response(Status::OK, [
+        "content-type" => "text/html; charset=utf-8",
+    ], $html);
+}), $logger);
+
+$server->start();
+
+// Await SIGINT, SIGTERM, or SIGSTOP to be received.
+$signal = Amp\signal(\SIGINT, \SIGTERM, \SIGSTOP);
+
+$logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
+
+$server->stop();
+

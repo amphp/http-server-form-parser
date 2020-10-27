@@ -7,18 +7,18 @@ use Amp\Http\Server\FormParser\Form;
 use Amp\Http\Server\FormParser\ParsingMiddleware;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\CallableRequestHandler;
+use Amp\Http\Server\Response;
 use Amp\PHPUnit\AsyncTestCase;
-use Amp\Promise;
 use League\Uri;
 use function Amp\Http\Server\Middleware\stack;
 
 class ParsingMiddlewareTest extends AsyncTestCase
 {
-    public function testWwwFormUrlencoded(): Promise
+    public function testWwwFormUrlencoded(): void
     {
         $callback = $this->createCallback(1);
 
-        $handler = stack(new CallableRequestHandler(function (Request $request) use ($callback) {
+        $handler = stack(new CallableRequestHandler(function (Request $request) use ($callback): Response {
             if ($request->hasAttribute(Form::class)) {
                 $callback();
 
@@ -27,38 +27,42 @@ class ParsingMiddlewareTest extends AsyncTestCase
                 $this->assertSame('bar', $form->getValue('foo'));
                 $this->assertSame('y', $form->getValue('x'));
             }
+
+            return new Response;
         }), new ParsingMiddleware);
 
         $request = new Request($this->createMock(Client::class), 'GET', Uri\Http::createFromString('/'), [
             'content-type' => 'application/x-www-form-urlencoded',
         ], 'foo=bar&x=y');
 
-        return $handler->handleRequest($request);
+        $handler->handleRequest($request);
     }
 
-    public function testNonForm(): Promise
+    public function testNonForm(): void
     {
-        $handler = stack(new CallableRequestHandler(function (Request $request) {
+        $handler = stack(new CallableRequestHandler(function (Request $request): Response {
             $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
-            $this->assertSame('{}', yield $request->getBody()->buffer());
+            $this->assertSame('{}', $request->getBody()->buffer());
+            return new Response;
         }), new ParsingMiddleware);
 
         $request = new Request($this->createMock(Client::class), 'GET', Uri\Http::createFromString('/'), [
             'content-type' => 'application/json',
         ], '{}');
 
-        return $handler->handleRequest($request);
+        $handler->handleRequest($request);
     }
 
-    public function testNone(): Promise
+    public function testNone(): void
     {
-        $handler = stack(new CallableRequestHandler(function (Request $request) {
+        $handler = stack(new CallableRequestHandler(function (Request $request): Response {
             $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
-            $this->assertSame('{}', yield $request->getBody()->buffer());
+            $this->assertSame('{}', $request->getBody()->buffer());
+            return new Response;
         }), new ParsingMiddleware);
 
         $request = new Request($this->createMock(Client::class), 'GET', Uri\Http::createFromString('/'), [], '{}');
 
-        return $handler->handleRequest($request);
+        $handler->handleRequest($request);
     }
 }
