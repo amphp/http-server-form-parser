@@ -34,18 +34,12 @@ final class BufferingParser
      */
     public function parseForm(Request $request): Promise
     {
-        $type = $request->getHeader("content-type");
-        $boundary = null;
-
-        if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
-            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                return new Success(new Form([]));
-            }
-
-            $boundary = $matches[2];
-        }
-
+        $type = $request->getHeader('content-type');
         $body = $request->getBody();
+        $boundary = $this->parseContentType($type);
+        if ($boundary === false) {
+            return new Success(new Form([]));
+        }
 
         return call(function () use ($body, $boundary) {
             return $this->parseBody(yield $body->buffer(), $boundary);
@@ -53,13 +47,15 @@ final class BufferingParser
     }
 
     /**
+     * Parses the given body string, using the given boundary.
+     *
      * @param string      $body
      * @param string|null $boundary
      *
      * @return Form
      * @throws ParseException
      */
-    private function parseBody(string $body, string $boundary = null): Form
+    public function parseBody(string $body, string $boundary = null): Form
     {
         // If there's no boundary, we're in urlencoded mode.
         if ($boundary === null) {
@@ -131,5 +127,24 @@ final class BufferingParser
         }
 
         return new Form($fields, $files);
+    }
+
+    /**
+     * Parse the given content-type and returns the boundary if parsing is supported, false if it isn't or null if we are in url-encoded mode.
+     *
+     * @param string|null $contentType
+     *
+     * @return string|false|null
+     */
+    public function parseContentType(?string $contentType)
+    {
+        if ($contentType !== null && \strncmp($contentType, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
+            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $contentType, $matches)) {
+                return false;
+            }
+
+            return $matches[2];
+        }
+        return null;
     }
 }
