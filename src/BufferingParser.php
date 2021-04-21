@@ -37,7 +37,7 @@ final class BufferingParser
         $type = $request->getHeader('content-type');
         $body = $request->getBody();
         $boundary = $this->parseContentType($type);
-        if ($boundary === false) {
+        if ($boundary === null) {
             return new Success(new Form([]));
         }
 
@@ -50,15 +50,15 @@ final class BufferingParser
      * Parses the given body string, using the given boundary.
      *
      * @param string      $body
-     * @param string|null $boundary
+     * @param string      $boundary
      *
      * @return Form
      * @throws ParseException
      */
-    public function parseBody(string $body, string $boundary = null): Form
+    public function parseBody(string $body, string $boundary = ''): Form
     {
         // If there's no boundary, we're in urlencoded mode.
-        if ($boundary === null) {
+        if ($boundary === '') {
             $fields = [];
 
             foreach (\explode("&", $body, $this->fieldCountLimit) as $pair) {
@@ -130,21 +130,22 @@ final class BufferingParser
     }
 
     /**
-     * Parse the given content-type and returns the boundary if parsing is supported, false if it isn't or null if we are in url-encoded mode.
+     * Parse the given content-type and returns the boundary if parsing is supported,
+     * an empty string if we are in url-encoded mode or null if not supported.
      *
-     * @param string|null $contentType
+     * @param null|string $contentType
      *
-     * @return string|false|null
+     * @return null|string
      */
     public function parseContentType(?string $contentType)
     {
         if ($contentType !== null && \strncmp($contentType, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
             if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $contentType, $matches)) {
-                return false;
+                return null;
             }
 
             return $matches[2];
         }
-        return null;
+        return '';
     }
 }
