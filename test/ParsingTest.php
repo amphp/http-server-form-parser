@@ -143,8 +143,6 @@ MULTIPART;
      */
     public function testStreamedDecoding(string $header, string $data, array $fields): void
     {
-        $this->ignoreLoopWatchers();
-
         $headers = [];
         $headers["content-type"] = [$header];
         $body = new RequestBody(new PipelineStream(Pipeline\fromIterable(\str_split($data, 8192))));

@@ -50,7 +50,7 @@ $server = new HttpServer($servers, new CallableRequestHandler(static function (R
 $server->start();
 
 // Await SIGINT, SIGTERM, or SIGSTOP to be received.
-$signal = Amp\signal(\SIGINT, \SIGTERM, \SIGSTOP);
+$signal = Amp\trapSignal([\SIGINT, \SIGTERM, \SIGSTOP]);
 
 $logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
 

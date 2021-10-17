@@ -6,6 +6,7 @@ require \dirname(__DIR__) . "/vendor/autoload.php";
 use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingParser;
 use Amp\Http\Server\HttpServer;
+use Amp\Http\Server\Options;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\CallableRequestHandler;
 use Amp\Http\Server\Response;
@@ -19,9 +20,16 @@ use function Amp\ByteStream\getStdout;
 
 // Run this script, then visit http://localhost:1337/ in your browser.
 
+$cert = new Socket\Certificate(__DIR__ . '/server.pem');
+
+$context = (new Socket\BindContext)
+        ->withTlsContext((new Socket\ServerTlsContext)->withDefaultCertificate($cert));
+
 $servers = [
-    Socket\Server::listen("0.0.0.0:1337"),
-    Socket\Server::listen("[::]:1337"),
+        Socket\Server::listen("0.0.0.0:1337"),
+        Socket\Server::listen("[::]:1337"),
+        Socket\Server::listen("0.0.0.0:1338", $context),
+        Socket\Server::listen("[::]:1338", $context),
 ];
 
 $logHandler = new StreamHandler(getStdout());
@@ -61,12 +69,12 @@ $server = new HttpServer($servers, new CallableRequestHandler(static function (R
     return new Response(Status::OK, [
         "content-type" => "text/html; charset=utf-8",
     ], $html);
-}), $logger);
+}), $logger, (new Options)->withRequestLogContext());
 
 $server->start();
 
 // Await SIGINT, SIGTERM, or SIGSTOP to be received.
-$signal = Amp\signal(\SIGINT, \SIGTERM, \SIGSTOP);
+$signal = Amp\trapSignal([\SIGINT, \SIGTERM, \SIGSTOP]);
 
 $logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
 
