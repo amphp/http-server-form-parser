@@ -7,16 +7,17 @@ use Amp\ByteStream\PipelineStream;
 use Amp\Http\InvalidHeaderException;
 use Amp\Http\Rfc7230;
 use Amp\Http\Server\Request;
+use Amp\Pipeline\Emitter;
 use Amp\Pipeline\Pipeline;
-use Amp\Pipeline\Subject;
-use function Revolt\launch;
+use Revolt\EventLoop;
+use function Amp\Pipeline\fromIterable;
 
 final class StreamingParser
 {
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
     private int $fieldCountLimit;
 
-    public function __construct(int $fieldCountLimit = null)
+    public function __construct(?int $fieldCountLimit = null)
     {
         $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
     }
@@ -28,17 +29,17 @@ final class StreamingParser
 
         if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
             if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                return Pipeline\fromIterable([]);
+                return fromIterable([]);
             }
 
             $boundary = $matches[2];
         }
 
 
-        $source = new Subject();
+        $source = new Emitter();
         $pipeline = $source->asPipeline();
 
-        launch(function () use ($boundary, $source, $request): void {
+        EventLoop::queue(function () use ($boundary, $source, $request): void {
             try {
                 if ($boundary !== null) {
                     $this->incrementalBoundaryParse($source, $request->getBody(), $boundary);
@@ -56,13 +57,13 @@ final class StreamingParser
     }
 
     /**
-     * @param Subject $source
+     * @param Emitter $source
      * @param InputStream $body
      * @param string $boundary
      *
      * @throws \Throwable
      */
-    private function incrementalBoundaryParse(Subject $source, InputStream $body, string $boundary): void
+    private function incrementalBoundaryParse(Emitter $source, InputStream $body, string $boundary): void
     {
         $fieldCount = 0;
         $dataEmitter = null;
@@ -127,7 +128,7 @@ final class StreamingParser
 
                 // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
 
-                $dataEmitter = new Subject;
+                $dataEmitter = new Emitter;
                 $stream = new PipelineStream($dataEmitter->asPipeline());
                 $field = new StreamedField(
                     $fieldName,
@@ -177,12 +178,12 @@ final class StreamingParser
     }
 
     /**
-     * @param Subject $source
+     * @param Emitter $source
      * @param InputStream $body
      *
      * @throws \Throwable
      */
-    private function incrementalFieldParse(Subject $source, InputStream $body): void
+    private function incrementalFieldParse(Emitter $source, InputStream $body): void
     {
         $fieldCount = 0;
         $dataEmitter = null;
@@ -204,7 +205,7 @@ final class StreamingParser
                     $fieldName = \urldecode(\substr($buffer, 0, $equalPos));
                     $buffer = \substr($buffer, $equalPos + 1);
 
-                    $dataEmitter = new Subject;
+                    $dataEmitter = new Emitter;
 
                     if ($fieldCount++ === $this->fieldCountLimit) {
                         throw new ParseException("Maximum number of variables exceeded");
