@@ -16,7 +16,7 @@ use Revolt\EventLoop;
 final class StreamingParser
 {
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
-    private int $fieldCountLimit;
+    private readonly int $fieldCountLimit;
 
     public function __construct(?int $fieldCountLimit = null)
     {

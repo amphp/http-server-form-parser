@@ -4,29 +4,21 @@ namespace Amp\Http\Server\FormParser;
 
 use Amp\Http\Message;
 
-final class BufferedFile extends Message
+final class BufferedFile
 {
-    private string $name;
-
-    private string $contents;
-
-    private string $mimeType;
+    private readonly Message $message;
 
     /**
-     * @param string $name
-     * @param string $value
-     * @param string $mimeType
-     * @param array  $rawHeaders Headers produced by {@see \Amp\Http\Rfc7230::parseRawHeaders()}
+     * @param array<int, array{string, string} $rawHeaders Headers produced by
+     * {@see \Amp\Http\Rfc7230::parseRawHeaders()}
      */
-    public function __construct(string $name, string $value = "", string $mimeType = "text/plain", array $rawHeaders = [])
-    {
-        $this->name = $name;
-        $this->contents = $value;
-        $this->mimeType = $mimeType;
-
-        foreach ($rawHeaders as [$key, $value]) {
-            $this->addHeader($key, $value);
-        }
+    public function __construct(
+        private readonly string $name,
+        private readonly string $contents = "",
+        private readonly string $mimeType = "text/plain",
+        array $rawHeaders = [],
+    ) {
+        $this->message = new Internal\FieldMessage($rawHeaders);
     }
 
     public function getName(): string
@@ -47,5 +39,20 @@ final class BufferedFile extends Message
     public function getMimeType(): string
     {
         return $this->mimeType;
+    }
+
+    public function getHeaders(): array
+    {
+        return $this->message->getHeaders();
+    }
+
+    public function getRawHeaders(): array
+    {
+        return $this->message->getRawHeaders();
+    }
+
+    public function getHeader(string $name): ?string
+    {
+        return $this->message->getHeader($name);
     }
 }

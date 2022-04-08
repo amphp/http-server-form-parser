@@ -29,7 +29,7 @@
         }
     ],
     "require": {
-        "php": ">=8",
+        "php": ">=8.1",
         "amphp/amp": "^3-dev",
         "amphp/byte-stream": "^2-dev",
         "amphp/http": "^1",

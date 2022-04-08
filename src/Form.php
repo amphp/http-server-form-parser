@@ -4,23 +4,17 @@ namespace Amp\Http\Server\FormParser;
 
 final class Form
 {
-    /** @var string[][] */
-    private array $fields;
-
-    /** @var BufferedFile[][] */
-    private array $files;
-
-    /** @var string[] */
-    private array $names;
+    /** @var list<string>|null */
+    private ?array $names = null;
 
     /**
-     * @param string[][]       $fields
-     * @param BufferedFile[][] $files
+     * @param array<string, list<string>> $fields
+     * @param array<string, list<BufferedFile>> $files
      */
-    public function __construct(array $fields, array $files = [])
-    {
-        $this->fields = $fields;
-        $this->files = $files;
+    public function __construct(
+        private readonly array $fields,
+        private readonly array $files = [],
+    ) {
     }
 
     /**
@@ -44,7 +38,7 @@ final class Form
      *
      * @param string $name
      *
-     * @return string[]
+     * @return list<string>
      */
     public function getValueArray(string $name): array
     {
@@ -62,7 +56,7 @@ final class Form
      *
      * File fields are not returned by this method.
      *
-     * @return string[][]
+     * @return array<string, list<string>>
      */
     public function getValues(): array
     {
@@ -98,7 +92,7 @@ final class Form
      *
      * @param string $name
      *
-     * @return BufferedFile[]
+     * @return list<BufferedFile>
      */
     public function getFileArray(string $name): array
     {
@@ -108,7 +102,7 @@ final class Form
     /**
      * Gets all files.
      *
-     * @return BufferedFile[][]
+     * @return array<string, list<BufferedFile>>
      */
     public function getFiles(): array
     {
@@ -118,10 +112,10 @@ final class Form
     /**
      * Returns the names of all fields.
      *
-     * @return string[]
+     * @return list<string>
      */
     public function getNames(): array
     {
-        return $this->names ?? $this->names = \array_map("strval", \array_keys($this->fields));
+        return $this->names ??= \array_map(strval(...), \array_keys($this->fields));
     }
 }

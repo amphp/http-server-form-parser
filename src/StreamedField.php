@@ -9,38 +9,22 @@ use Amp\Http\Message;
 
 final class StreamedField extends Payload
 {
-    private string $name;
-
-    private string $mimeType;
-
-    private ?string $filename;
-
-    private Message $message;
+    private readonly Message $message;
 
     /**
      * @param array<int, array{string, string} $rawHeaders Headers produced by
      * {@see \Amp\Http\Rfc7230::parseRawHeaders()}
      */
     public function __construct(
-        string $name,
-        ReadableStream $stream = null,
-        string $mimeType = "text/plain",
-        ?string $filename = null,
-        array $rawHeaders = []
+        private readonly string $name,
+        ?ReadableStream $stream = null,
+        private readonly string $mimeType = "text/plain",
+        private readonly ?string $filename = null,
+        array $rawHeaders = [],
     ) {
         parent::__construct($stream ?? new ReadableBuffer());
-        $this->name = $name;
-        $this->mimeType = $mimeType;
-        $this->filename = $filename;
 
-        $this->message = new class($rawHeaders) extends Message {
-            public function __construct(array $headers)
-            {
-                foreach ($headers as [$key, $value]) {
-                    $this->addHeader($key, $value);
-                }
-            }
-        };
+        $this->message = new Internal\FieldMessage($rawHeaders);
     }
 
     public function getName(): string

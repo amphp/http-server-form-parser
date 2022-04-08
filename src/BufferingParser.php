@@ -13,9 +13,9 @@ use Amp\Http\Server\Request;
 final class BufferingParser
 {
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
-    private int $fieldCountLimit;
+    private readonly int $fieldCountLimit;
 
-    public function __construct(int $fieldCountLimit = null)
+    public function __construct(?int $fieldCountLimit = null)
     {
         $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
     }
@@ -52,7 +52,7 @@ final class BufferingParser
      * @return Form
      * @throws ParseException
      */
-    private function parseBody(string $body, string $boundary = null): Form
+    private function parseBody(string $body, ?string $boundary = null): Form
     {
         // If there's no boundary, we're in urlencoded mode.
         if ($boundary === null) {

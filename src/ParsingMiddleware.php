@@ -11,10 +11,10 @@ use Amp\Http\Status;
 
 final class ParsingMiddleware implements Middleware
 {
-    private BufferingParser $parser;
+    private readonly BufferingParser $parser;
 
     public function __construct(
-        private ErrorHandler $errorHandler,
+        private readonly ErrorHandler $errorHandler,
         ?int $fieldCountLimit = null,
     ) {
         $this->parser = new BufferingParser($fieldCountLimit);
