@@ -34,11 +34,7 @@ final class Form
      */
     public function getValue(string $name): ?string
     {
-        if (!isset($this->fields[$name][0])) {
-            return null;
-        }
-
-        return $this->fields[$name][0];
+        return $this->fields[$name][0] ?? null;
     }
 
     /**

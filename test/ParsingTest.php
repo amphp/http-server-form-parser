@@ -2,16 +2,16 @@
 
 namespace Amp\Http\Server\FormParser\Test;
 
-use Amp\ByteStream\InMemoryStream;
-use Amp\ByteStream\PipelineStream;
+use Amp\ByteStream\ReadableBuffer;
+use Amp\ByteStream\ReadableIterableStream;
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\FormParser\BufferingParser;
 use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestBody;
-use Amp\Pipeline;
 use Amp\PHPUnit\AsyncTestCase;
+use Amp\Pipeline\Pipeline;
 use League\Uri;
 
 class ParsingTest extends AsyncTestCase
@@ -19,8 +19,8 @@ class ParsingTest extends AsyncTestCase
     /**
      * @param string $header
      * @param string $data
-     * @param array  $fields
-     * @param array  $files
+     * @param array $fields
+     * @param array $files
      *
      * @dataProvider requestBodies
      */
@@ -28,7 +28,7 @@ class ParsingTest extends AsyncTestCase
     {
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new RequestBody(new InMemoryStream($data));
+        $body = new RequestBody(new ReadableBuffer($data));
 
         $client = $this->createMock(Client::class);
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
@@ -137,7 +137,7 @@ MULTIPART;
     /**
      * @param string $header
      * @param string $data
-     * @param array  $fields
+     * @param array $fields
      *
      * @dataProvider streamedRequestBodies
      */
@@ -145,15 +145,16 @@ MULTIPART;
     {
         $headers = [];
         $headers["content-type"] = [$header];
-        $body = new RequestBody(new PipelineStream(Pipeline\fromIterable(\str_split($data, 8192))));
+        $body = new RequestBody(new ReadableIterableStream(Pipeline::fromIterable(\str_split($data, 8192))));
 
         $client = $this->createMock(Client::class);
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
         $key = 0;
 
-        $pipeline = (new StreamingParser)->parseForm($request);
+        $iterator = (new StreamingParser)->parseForm($request);
 
-        while ($parsedField = $pipeline->continue()) {
+        while ($iterator->continue()) {
+            $parsedField = $iterator->getValue();
             \assert($parsedField instanceof StreamedField);
             $expectedField = $fields[$key++];
             $this->assertSame($expectedField["name"], $parsedField->getName());
@@ -162,7 +163,7 @@ MULTIPART;
             $this->assertSame($expectedField["content"], $parsedField->buffer());
         }
 
-        $this->assertNull($pipeline->continue());
+        $this->assertFalse($iterator->continue());
 
         $this->assertSame(\count($fields), $key);
     }

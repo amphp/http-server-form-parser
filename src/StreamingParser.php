@@ -2,15 +2,16 @@
 
 namespace Amp\Http\Server\FormParser;
 
-use Amp\ByteStream\InputStream;
-use Amp\ByteStream\PipelineStream;
+use Amp\ByteStream\ReadableIterableStream;
+use Amp\ByteStream\ReadableStream;
 use Amp\Http\InvalidHeaderException;
 use Amp\Http\Rfc7230;
 use Amp\Http\Server\Request;
-use Amp\Pipeline\Emitter;
+use Amp\Pipeline\ConcurrentIterator;
+use Amp\Pipeline\DisposedException;
 use Amp\Pipeline\Pipeline;
+use Amp\Pipeline\Queue;
 use Revolt\EventLoop;
-use function Amp\Pipeline\fromIterable;
 
 final class StreamingParser
 {
@@ -22,22 +23,25 @@ final class StreamingParser
         $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
     }
 
-    public function parseForm(Request $request): Pipeline
+    /**
+     * @return ConcurrentIterator<StreamedField>
+     */
+    public function parseForm(Request $request): ConcurrentIterator
     {
         $type = $request->getHeader("content-type");
         $boundary = null;
 
         if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
             if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                return fromIterable([]);
+                return Pipeline::fromIterable([]);
             }
 
             $boundary = $matches[2];
         }
 
 
-        $source = new Emitter();
-        $pipeline = $source->asPipeline();
+        $source = new Queue();
+        $pipeline = $source->pipe();
 
         EventLoop::queue(function () use ($boundary, $source, $request): void {
             try {
@@ -53,20 +57,13 @@ final class StreamingParser
             }
         });
 
-        return $pipeline;
+        return $pipeline->getIterator();
     }
 
-    /**
-     * @param Emitter $source
-     * @param InputStream $body
-     * @param string $boundary
-     *
-     * @throws \Throwable
-     */
-    private function incrementalBoundaryParse(Emitter $source, InputStream $body, string $boundary): void
+    private function incrementalBoundaryParse(Queue $source, ReadableStream $body, string $boundary): void
     {
         $fieldCount = 0;
-        $dataEmitter = null;
+        $queue = null;
 
         try {
             $buffer = "";
@@ -128,8 +125,8 @@ final class StreamingParser
 
                 // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
 
-                $dataEmitter = new Emitter;
-                $stream = new PipelineStream($dataEmitter->asPipeline());
+                $queue = new Queue();
+                $stream = new ReadableIterableStream($queue->iterate());
                 $field = new StreamedField(
                     $fieldName,
                     $stream,
@@ -138,14 +135,14 @@ final class StreamingParser
                     $headers
                 );
 
-                $future = $source->emit($field);
+                $future = $source->pushAsync($field);
 
                 $buffer = \substr($buffer, $end + 4);
 
                 while (($end = \strpos($buffer, $boundarySeparator)) === false) {
                     if (\strlen($buffer) > \strlen($boundarySeparator)) {
                         $position = \strlen($buffer) - \strlen($boundarySeparator);
-                        $dataEmitter->yield(\substr($buffer, 0, $position));
+                        $queue->push(\substr($buffer, 0, $position));
                         $buffer = \substr($buffer, $position);
                     }
 
@@ -156,9 +153,9 @@ final class StreamingParser
                     }
                 }
 
-                $dataEmitter->yield(\substr($buffer, 0, $end));
-                $dataEmitter->complete();
-                $dataEmitter = null;
+                $queue->push(\substr($buffer, 0, $end));
+                $queue->complete();
+                $queue = null;
                 $offset = $end + \strlen($boundarySeparator);
 
                 while (\strlen($buffer) < 4) {
@@ -172,21 +169,15 @@ final class StreamingParser
                 $future->await();
             }
         } catch (\Throwable $e) {
-            $dataEmitter?->error($e);
+            $queue?->error($e);
             throw $e;
         }
     }
 
-    /**
-     * @param Emitter $source
-     * @param InputStream $body
-     *
-     * @throws \Throwable
-     */
-    private function incrementalFieldParse(Emitter $source, InputStream $body): void
+    private function incrementalFieldParse(Queue $source, ReadableStream $body): void
     {
         $fieldCount = 0;
-        $dataEmitter = null;
+        $queue = null;
 
         try {
             $buffer = "";
@@ -205,24 +196,28 @@ final class StreamingParser
                     $fieldName = \urldecode(\substr($buffer, 0, $equalPos));
                     $buffer = \substr($buffer, $equalPos + 1);
 
-                    $dataEmitter = new Emitter;
+                    $queue = new Queue();
 
                     if ($fieldCount++ === $this->fieldCountLimit) {
                         throw new ParseException("Maximum number of variables exceeded");
                     }
 
-                    $future = $source->emit(new StreamedField(
+                    $future = $source->pushAsync(new StreamedField(
                         $fieldName,
-                        new PipelineStream($dataEmitter->asPipeline())
+                        new ReadableIterableStream($queue->iterate())
                     ));
 
                     while (false === ($nextPos = \strpos($buffer, "&"))) {
                         $chunk = $body->read();
 
                         if ($chunk === null) {
-                            $dataEmitter->yield(\urldecode($buffer));
-                            $dataEmitter->complete();
-                            $dataEmitter = null;
+                            try {
+                                $queue->push(\urldecode($buffer));
+                            } catch (DisposedException) {
+                                // Ignore, we've now completed anyway.
+                            }
+                            $queue->complete();
+                            $queue = null;
 
                             return;
                         }
@@ -239,12 +234,20 @@ final class StreamingParser
                             $buffer = "";
                         }
 
-                        $dataEmitter->yield(\urldecode($chunk));
+                        try {
+                            $queue->push(\urldecode($chunk));
+                        } catch (DisposedException) {
+                            // Ignore and continue consuming this field.
+                        }
                     }
 
-                    $dataEmitter->yield(\urldecode(\substr($buffer, 0, $nextPos)));
-                    $dataEmitter->complete();
-                    $dataEmitter = null;
+                    try {
+                        $queue->push(\urldecode(\substr($buffer, 0, $nextPos)));
+                    } catch (DisposedException) {
+                        // Ignore, we need to keep consuming data until the next field.
+                    }
+                    $queue->complete();
+                    $queue = null;
 
                     $buffer = \substr($buffer, $nextPos + 1);
 
@@ -264,7 +267,7 @@ final class StreamingParser
                     throw new ParseException("Maximum number of variables exceeded");
                 }
 
-                $source->yield(new StreamedField($fieldName));
+                $source->push(new StreamedField($fieldName));
 
                 goto parse_parameter;
             }
@@ -274,10 +277,10 @@ final class StreamingParser
                     throw new ParseException("Maximum number of variables exceeded");
                 }
 
-                $source->yield(new StreamedField(\urldecode($buffer)));
+                $source->push(new StreamedField(\urldecode($buffer)));
             }
         } catch (\Throwable $e) {
-            $dataEmitter?->error($e);
+            $queue?->error($e);
             throw $e;
         }
     }

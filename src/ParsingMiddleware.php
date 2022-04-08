@@ -7,18 +7,16 @@ use Amp\Http\Server\Middleware;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
-use Amp\Http\Server\Server;
-use Amp\Http\Server\ServerObserver;
 use Amp\Http\Status;
 
-final class ParsingMiddleware implements Middleware, ServerObserver
+final class ParsingMiddleware implements Middleware
 {
     private BufferingParser $parser;
 
-    private ErrorHandler $errorHandler;
-
-    public function __construct(int $fieldCountLimit = null)
-    {
+    public function __construct(
+        private ErrorHandler $errorHandler,
+        ?int $fieldCountLimit = null,
+    ) {
         $this->parser = new BufferingParser($fieldCountLimit);
     }
 
@@ -26,20 +24,10 @@ final class ParsingMiddleware implements Middleware, ServerObserver
     {
         try {
             $request->setAttribute(Form::class, $this->parser->parseForm($request));
-        } catch (ParseException $exception) {
-            return $this->errorHandler->handleError(Status::BAD_REQUEST, null, $request);
+        } catch (ParseException) {
+            return $this->errorHandler->handleError(Status::BAD_REQUEST, request: $request);
         }
 
         return $requestHandler->handleRequest($request);
-    }
-
-    public function onStart(Server $server): void
-    {
-        $this->errorHandler = $server->getErrorHandler();
-    }
-
-    public function onStop(Server $server): void
-    {
-        // Nothing to do.
     }
 }

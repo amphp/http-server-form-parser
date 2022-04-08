@@ -2,9 +2,9 @@
 
 namespace Amp\Http\Server\FormParser;
 
-use Amp\ByteStream\InMemoryStream;
-use Amp\ByteStream\InputStream;
 use Amp\ByteStream\Payload;
+use Amp\ByteStream\ReadableBuffer;
+use Amp\ByteStream\ReadableStream;
 use Amp\Http\Message;
 
 final class StreamedField extends Payload
@@ -18,26 +18,24 @@ final class StreamedField extends Payload
     private Message $message;
 
     /**
-     * @param string           $name
-     * @param InputStream|null $stream
-     * @param string           $mimeType
-     * @param string|null      $filename
-     * @param array            $rawHeaders Headers produced by {@see \Amp\Http\Rfc7230::parseRawHeaders()}
+     * @param array<int, array{string, string} $rawHeaders Headers produced by
+     * {@see \Amp\Http\Rfc7230::parseRawHeaders()}
      */
     public function __construct(
         string $name,
-        InputStream $stream = null,
+        ReadableStream $stream = null,
         string $mimeType = "text/plain",
         ?string $filename = null,
         array $rawHeaders = []
     ) {
-        parent::__construct($stream ?? new InMemoryStream);
+        parent::__construct($stream ?? new ReadableBuffer());
         $this->name = $name;
         $this->mimeType = $mimeType;
         $this->filename = $filename;
 
         $this->message = new class($rawHeaders) extends Message {
-            public function __construct(array $headers) {
+            public function __construct(array $headers)
+            {
                 foreach ($headers as [$key, $value]) {
                     $this->addHeader($key, $value);
                 }

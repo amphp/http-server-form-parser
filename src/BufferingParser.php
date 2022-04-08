@@ -66,7 +66,7 @@ final class BufferingParser
                 $fields[$field][] = $value;
             }
 
-            if (\strpos($pair[1] ?? "", "&") !== false) {
+            if (\str_contains($pair[1] ?? "", "&")) {
                 throw new ParseException("Maximum number of variables exceeded");
             }
 
@@ -124,7 +124,7 @@ final class BufferingParser
             }
         }
 
-        if (\strpos($entry ?? "", "--$boundary") !== false) {
+        if (\str_contains($entry ?? "", "--$boundary")) {
             throw new ParseException("Maximum number of variables exceeded");
         }
 

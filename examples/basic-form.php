@@ -3,51 +3,68 @@
 
 require \dirname(__DIR__) . "/vendor/autoload.php";
 
-use Amp\Http\Server\HttpServer;
+use Amp\ByteStream;
+use Amp\Http\Server\DefaultErrorHandler;
+use Amp\Http\Server\FormParser;
 use Amp\Http\Server\Request;
-use Amp\Http\Server\RequestHandler\CallableRequestHandler;
+use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
+use Amp\Http\Server\SocketHttpServer;
 use Amp\Http\Status;
 use Amp\Log\ConsoleFormatter;
 use Amp\Log\StreamHandler;
 use Amp\Socket;
 use Monolog\Logger;
 use Monolog\Processor\PsrLogMessageProcessor;
-use function Amp\ByteStream\getStdout;
-use function Amp\Http\Server\FormParser\parseForm;
 
 // Run this script, then visit http://localhost:1337/ in your browser.
 
-$servers = [
-    Socket\Server::listen("0.0.0.0:1337"),
-    Socket\Server::listen("[::]:1337"),
-];
-
-$logHandler = new StreamHandler(getStdout());
-$logHandler->setFormatter(new ConsoleFormatter);
-$logHandler->pushProcessor(new PsrLogMessageProcessor);
-
+$logHandler = new StreamHandler(ByteStream\getStdout());
+$logHandler->pushProcessor(new PsrLogMessageProcessor());
+$logHandler->setFormatter(new ConsoleFormatter());
 $logger = new Logger('server');
 $logger->pushHandler($logHandler);
 
-$server = new HttpServer($servers, new CallableRequestHandler(static function (Request $request): Response {
-    if ($request->getUri()->getPath() === '/') {
-        $html = "<html lang='en'><form action='/form' method='POST'><input type='text' name='test'><button type='submit'>submit</button></form>";
+$server = new SocketHttpServer($logger);
 
-        return new Response(Status::OK, [
-            "content-type" => "text/html; charset=utf-8",
-        ], $html);
+$server->expose(new Socket\InternetAddress("0.0.0.0", 1337));
+$server->expose(new Socket\InternetAddress("[::]", 1337));
+
+$server->start(new ClosureRequestHandler(static function (Request $request): Response {
+    if ($request->getUri()->getPath() === '/') {
+        $html = <<<HTML
+        <html lang="en">
+            <body>
+                <form action="/form" method="POST">
+                    <input type="text" name="test" placeholder="Name">
+                    <button type="submit">submit</button>
+                </form>
+            </body>
+        </html>
+        HTML;
+
+        return new Response(
+            status: Status::OK,
+            headers: ["content-type" => "text/html; charset=utf-8"],
+            body: $html,
+        );
     }
 
-    $form = parseForm($request);
-    $html = "<html lang='en'><a href='/'>← back</a><br>" . \htmlspecialchars($form->getValue("test") ?? "Hello, World!") . '</html>';
+    $form = FormParser\parseForm($request);
+    $html = <<<HTML
+    <html lang="en">
+        <body>
+            <div><a href="/">← back</a><br>Hello, {input}!</div>
+        </body>
+    </html>
+    HTML;
 
-    return new Response(Status::OK, [
-        "content-type" => "text/html; charset=utf-8",
-    ], $html);
-}), $logger);
-
-$server->start();
+    return new Response(
+        status: Status::OK,
+        headers: ["content-type" => "text/html; charset=utf-8"],
+        body: \str_replace('{input}', \htmlspecialchars($form->getValue("test") ?? "World"), $html)
+    );
+}), new DefaultErrorHandler());
 
 // Await SIGINT, SIGTERM, or SIGSTOP to be received.
 $signal = Amp\trapSignal([\SIGINT, \SIGTERM, \SIGSTOP]);
@@ -55,4 +72,3 @@ $signal = Amp\trapSignal([\SIGINT, \SIGTERM, \SIGSTOP]);
 $logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
 
 $server->stop();
-
