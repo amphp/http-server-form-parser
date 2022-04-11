@@ -30,52 +30,61 @@ final class BufferingParser
      *
      * @param Request $request
      *
-     * @return Promise
+     * @return Promise<Form>
      */
     public function parseForm(Request $request): Promise
     {
         $type = $request->getHeader('content-type');
-        $body = $request->getBody();
         $boundary = $this->parseContentType($type);
         if ($boundary === null) {
             return new Success(new Form([]));
         }
 
-        return call(function () use ($body, $boundary) {
-            return $this->parseBody(yield $body->buffer(), $boundary);
+        return call(function () use ($request, $boundary) {
+            $body = yield $request->getBody()->buffer();
+
+            return $boundary === ''
+                ? $this->parseUrlEncodedBody($body)
+                : $this->parseMultipartBody($body, $boundary);
         });
     }
 
     /**
-     * Parses the given body string, using the given boundary.
-     *
-     * @param string      $body
-     * @param string      $boundary
+     * @param string $body application/x-www-form-urlencoded body.
      *
      * @return Form
      * @throws ParseException
      */
-    public function parseBody(string $body, string $boundary = ''): Form
+    public function parseUrlEncodedBody(string $body): Form
     {
-        // If there's no boundary, we're in urlencoded mode.
-        if ($boundary === '') {
-            $fields = [];
+        $fields = [];
 
-            foreach (\explode("&", $body, $this->fieldCountLimit) as $pair) {
-                $pair = \explode("=", $pair, 2);
-                $field = \urldecode($pair[0]);
-                $value = \urldecode($pair[1] ?? "");
+        foreach (\explode("&", $body, $this->fieldCountLimit) as $pair) {
+            $pair = \explode("=", $pair, 2);
+            $field = \urldecode($pair[0]);
+            $value = \urldecode($pair[1] ?? "");
 
-                $fields[$field][] = $value;
-            }
-
-            if (\strpos($pair[1] ?? "", "&") !== false) {
-                throw new ParseException("Maximum number of variables exceeded");
-            }
-
-            return new Form($fields);
+            $fields[$field][] = $value;
         }
 
+        if (\strpos($pair[1] ?? "", "&") !== false) {
+            throw new ParseException("Maximum number of variables exceeded");
+        }
+
+        return new Form($fields);
+    }
+
+    /**
+     * Parses the given body multipart body string using the given boundary.
+     *
+     * @param string $body
+     * @param string $boundary
+     *
+     * @return Form
+     * @throws ParseException
+     */
+    public function parseMultipartBody(string $body, string $boundary): Form
+    {
         $fields = $files = [];
 
         // RFC 7578, RFC 2046 Section 5.1.1
@@ -137,7 +146,7 @@ final class BufferingParser
      *
      * @return null|string
      */
-    public function parseContentType(?string $contentType)
+    public function parseContentType(?string $contentType): ?string
     {
         if ($contentType !== null && \strncmp($contentType, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
             if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $contentType, $matches)) {
