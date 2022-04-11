@@ -40,12 +40,26 @@ final class BufferingParser
         }
 
         return call(function () use ($request, $boundary) {
-            $body = yield $request->getBody()->buffer();
-
-            return $boundary === ''
-                ? $this->parseUrlEncodedBody($body)
-                : $this->parseMultipartBody($body, $boundary);
+            return $this->parseBody(yield $request->getBody()->buffer(), $boundary);
         });
+    }
+
+    /**
+     * @param string $body application/x-www-form-urlencoded or multipart/form-data body.
+     * @param string|null $boundary Result from {@see parseContentBoundary()} from a content-type header.
+     *
+     * @return Form
+     * @throws ParseException
+     */
+    public function parseBody(string $body, ?string $boundary): Form
+    {
+        if ($boundary === null) {
+            return new Form([]);
+        }
+
+        return $boundary === ''
+            ? $this->parseUrlEncodedBody($body)
+            : $this->parseMultipartBody($body, $boundary);
     }
 
     /**
