@@ -23,15 +23,9 @@ final class StreamingParser
 
     public function parseForm(Request $request): Iterator
     {
-        $type = $request->getHeader("content-type");
-        $boundary = null;
-
-        if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
-            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                return Iterator\fromIterable([]);
-            }
-
-            $boundary = $matches[2];
+        $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
+        if ($boundary === null) {
+            return Iterator\fromIterable([]);
         }
 
         $body = $request->getBody();
@@ -41,7 +35,7 @@ final class StreamingParser
 
         asyncCall(function () use ($boundary, $emitter, $body) {
             try {
-                if ($boundary !== null) {
+                if ($boundary !== '') {
                     yield from $this->incrementalBoundaryParse($emitter, $body, $boundary);
                 } else {
                     yield from $this->incrementalFieldParse($emitter, $body);

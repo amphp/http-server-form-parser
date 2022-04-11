@@ -34,8 +34,7 @@ final class BufferingParser
      */
     public function parseForm(Request $request): Promise
     {
-        $type = $request->getHeader('content-type');
-        $boundary = $this->parseContentType($type);
+        $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
         if ($boundary === null) {
             return new Success(new Form([]));
         }
@@ -136,25 +135,5 @@ final class BufferingParser
         }
 
         return new Form($fields, $files);
-    }
-
-    /**
-     * Parse the given content-type and returns the boundary if parsing is supported,
-     * an empty string if we are in url-encoded mode or null if not supported.
-     *
-     * @param null|string $contentType
-     *
-     * @return null|string
-     */
-    public function parseContentType(?string $contentType): ?string
-    {
-        if ($contentType !== null && \strncmp($contentType, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
-            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $contentType, $matches)) {
-                return null;
-            }
-
-            return $matches[2];
-        }
-        return '';
     }
 }
