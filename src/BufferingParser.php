@@ -44,6 +44,19 @@ final class BufferingParser
     }
 
     /**
+     * @param string $body application/x-www-form-urlencoded or multipart/form-data body.
+     * @param string|null $boundary Result from {@see parseContentBoundary()} from a content-type header.
+     */
+    public function parseBody(string $body, ?string $boundary): Form
+    {
+        return match ($boundary) {
+            null => new Form([]),
+            '' => $this->parseUrlEncodedBody($body),
+            default => $this->parseMultipartBody($body, $boundary),
+        };
+    }
+
+    /**
      * @param string $body application/x-www-form-urlencoded body.
      */
     public function parseUrlEncodedBody(string $body): Form
