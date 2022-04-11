@@ -31,48 +31,48 @@ final class BufferingParser
      */
     public function parseForm(Request $request): Form
     {
-        $type = $request->getHeader("content-type");
-        $boundary = null;
-
-        if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
-            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                return new Form([]);
-            }
-
-            $boundary = $matches[2];
+        $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
+        if ($boundary === null) {
+            return new Form([]);
         }
 
-        return $this->parseBody($request->getBody()->buffer(), $boundary);
+        $body = $request->getBody()->buffer();
+
+        return $boundary === ''
+            ? $this->parseUrlEncodedBody($body)
+            : $this->parseMultipartBody($body, $boundary);
     }
 
     /**
-     * @param string      $body
-     * @param string|null $boundary
-     *
-     * @return Form
-     * @throws ParseException
+     * @param string $body application/x-www-form-urlencoded body.
      */
-    private function parseBody(string $body, ?string $boundary = null): Form
+    public function parseUrlEncodedBody(string $body): Form
     {
-        // If there's no boundary, we're in urlencoded mode.
-        if ($boundary === null) {
-            $fields = [];
+        $fields = [];
 
-            foreach (\explode("&", $body, $this->fieldCountLimit) as $pair) {
-                $pair = \explode("=", $pair, 2);
-                $field = \urldecode($pair[0]);
-                $value = \urldecode($pair[1] ?? "");
+        foreach (\explode("&", $body, $this->fieldCountLimit) as $pair) {
+            $pair = \explode("=", $pair, 2);
+            $field = \urldecode($pair[0]);
+            $value = \urldecode($pair[1] ?? "");
 
-                $fields[$field][] = $value;
-            }
-
-            if (\str_contains($pair[1] ?? "", "&")) {
-                throw new ParseException("Maximum number of variables exceeded");
-            }
-
-            return new Form($fields);
+            $fields[$field][] = $value;
         }
 
+        if (\str_contains($pair[1] ?? "", "&")) {
+            throw new ParseException("Maximum number of variables exceeded");
+        }
+
+        return new Form($fields);
+    }
+
+    /**
+     * Parses the given body multipart body string using the given boundary.
+     *
+     * @param string $body multipart/form-data or multipart/mixed body.
+     * @param string $boundary Part boundary identifier.
+     */
+    public function parseMultipartBody(string $body, string $boundary): Form
+    {
         $fields = $files = [];
 
         // RFC 7578, RFC 2046 Section 5.1.1

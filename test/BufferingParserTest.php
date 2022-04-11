@@ -14,7 +14,13 @@ class BufferingParserTest extends AsyncTestCase
     public function testIssue6(): void
     {
         $body = "foobar=" . \urlencode("&");
-        $request = new Request($this->createMock(Client::class), 'GET', Http::createFromString('/'), [], $body);
+        $request = new Request(
+            client: $this->createMock(Client::class),
+            method: 'GET',
+            uri: Http::createFromString('/'),
+            headers: ['content-type' => 'application/x-www-form-urlencoded'],
+            body: $body,
+        );
         $form = (new BufferingParser())->parseForm($request);
         \assert($form instanceof Form);
 

@@ -28,24 +28,17 @@ final class StreamingParser
      */
     public function parseForm(Request $request): ConcurrentIterator
     {
-        $type = $request->getHeader("content-type");
-        $boundary = null;
-
-        if ($type !== null && \strncmp($type, "application/x-www-form-urlencoded", \strlen("application/x-www-form-urlencoded"))) {
-            if (!\preg_match('#^\s*multipart/(?:form-data|mixed)(?:\s*;\s*boundary\s*=\s*("?)([^"]*)\1)?$#', $type, $matches)) {
-                return Pipeline::fromIterable([]);
-            }
-
-            $boundary = $matches[2];
+        $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
+        if ($boundary === null) {
+            return Pipeline::fromIterable([]);
         }
-
 
         $source = new Queue();
         $pipeline = $source->pipe();
 
         EventLoop::queue(function () use ($boundary, $source, $request): void {
             try {
-                if ($boundary !== null) {
+                if ($boundary !== '') {
                     $this->incrementalBoundaryParse($source, $request->getBody(), $boundary);
                 } else {
                     $this->incrementalFieldParse($source, $request->getBody());
