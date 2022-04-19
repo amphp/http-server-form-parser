@@ -19,13 +19,12 @@ Basic usage works by calling `parseForm($request)`, which will buffer the reques
 
 use Amp\Http\Server\FormParser;
 use Amp\Http\Server\Request;
-use Amp\Http\Server\RequestHandler\CallableRequestHandler;
+use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Status;
 
-new CallableRequestHandler(function (Request $request) {
-    /** @var FormParser\Form $form */
-    $form = yield FormParser\parseForm($request);
+new ClosureRequestHandler(function (Request $request) {
+    $form = FormParser\parseForm($request);
 
     return new Response(Status::OK, [
         "content-type" => "text/plain; charset=utf-8"
