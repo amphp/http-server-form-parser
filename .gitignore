@@ -3,5 +3,6 @@
 build
 coverage
 composer.lock
+composer-require-checker.phar
 phpunit.xml
 vendor

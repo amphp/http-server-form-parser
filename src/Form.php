@@ -21,10 +21,6 @@ final class Form
      * Gets the first field value with a given name or null, if no such field exists.
      *
      * File fields are not returned by this method.
-     *
-     * @param string $name
-     *
-     * @return string|null
      */
     public function getValue(string $name): ?string
     {
@@ -35,8 +31,6 @@ final class Form
      * Gets all field values with a given name.
      *
      * File fields are not returned by this method.
-     *
-     * @param string $name
      *
      * @return list<string>
      */
@@ -65,10 +59,6 @@ final class Form
 
     /**
      * Checks whether at least one file field is available for the given name.
-     *
-     * @param string $name
-     *
-     * @return bool
      */
     public function hasFile(string $name): bool
     {
@@ -77,10 +67,6 @@ final class Form
 
     /**
      * Gets the first file field with a given name or null, if no such field exists.
-     *
-     * @param string $name
-     *
-     * @return BufferedFile|null
      */
     public function getFile(string $name): ?BufferedFile
     {
@@ -89,8 +75,6 @@ final class Form
 
     /**
      * Gets all file fields with a given name.
-     *
-     * @param string $name
      *
      * @return list<BufferedFile>
      */

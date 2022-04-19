@@ -17,11 +17,6 @@ use League\Uri;
 class ParsingTest extends AsyncTestCase
 {
     /**
-     * @param string $header
-     * @param string $data
-     * @param array $fields
-     * @param array $files
-     *
      * @dataProvider requestBodies
      */
     public function testBufferedDecoding(string $header, string $data, array $fields, array $files): void
@@ -135,10 +130,6 @@ MULTIPART;
     }
 
     /**
-     * @param string $header
-     * @param string $data
-     * @param array $fields
-     *
      * @dataProvider streamedRequestBodies
      */
     public function testStreamedDecoding(string $header, string $data, array $fields): void

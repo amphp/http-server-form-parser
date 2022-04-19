@@ -24,10 +24,6 @@ final class BufferingParser
      * Consumes the request's body and parses it.
      *
      * If the content-type doesn't match the supported form content types, the body isn't consumed.
-     *
-     * @param Request $request
-     *
-     * @return Form
      */
     public function parseForm(Request $request): Form
     {
