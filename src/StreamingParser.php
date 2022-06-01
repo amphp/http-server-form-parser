@@ -30,7 +30,7 @@ final class StreamingParser
     {
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
         if ($boundary === null) {
-            return Pipeline::fromIterable([]);
+            return Pipeline::fromIterable([])->getIterator();
         }
 
         $source = new Queue();
