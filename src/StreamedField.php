@@ -2,14 +2,19 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\ByteStream\BufferException;
 use Amp\ByteStream\Payload;
 use Amp\ByteStream\ReadableBuffer;
 use Amp\ByteStream\ReadableStream;
+use Amp\ByteStream\StreamException;
+use Amp\Cancellation;
 use Amp\Http\Message;
 
-final class StreamedField extends Payload
+final class StreamedField implements ReadableStream
 {
     private readonly Message $message;
+
+    private readonly Payload $payload;
 
     /**
      * @param array<int, array{string, string} $rawHeaders Headers produced by
@@ -22,8 +27,7 @@ final class StreamedField extends Payload
         private readonly ?string $filename = null,
         array $rawHeaders = [],
     ) {
-        parent::__construct($stream ?? new ReadableBuffer());
-
+        $this->payload = new Payload($stream ?? new ReadableBuffer());
         $this->message = new Internal\FieldMessage($rawHeaders);
     }
 
@@ -60,5 +64,40 @@ final class StreamedField extends Payload
     public function getHeader(string $name): ?string
     {
         return $this->message->getHeader($name);
+    }
+
+    public function read(?Cancellation $cancellation = null): ?string
+    {
+        return $this->payload->read($cancellation);
+    }
+
+    public function isReadable(): bool
+    {
+        return $this->payload->isReadable();
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->payload->isClosed();
+    }
+
+    public function close(): void
+    {
+        $this->payload->close();
+    }
+
+    public function onClose(\Closure $onClose): void
+    {
+        $this->payload->onClose($onClose);
+    }
+
+    /**
+     * @see Payload::buffer()
+     *
+     * @throws BufferException|StreamException
+     */
+    public function buffer(?Cancellation $cancellation = null, int $limit = \PHP_INT_MAX): string
+    {
+        return $this->payload->buffer($cancellation, $limit);
     }
 }
