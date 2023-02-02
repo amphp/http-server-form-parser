@@ -2,10 +2,10 @@
 
 namespace Amp\Http\Server\FormParser\Internal;
 
-use Amp\Http\Message;
+use Amp\Http\HttpMessage;
 
 /** @internal */
-final class FieldMessage extends Message
+final class FieldMessage extends HttpMessage
 {
     public function __construct(array $headers)
     {

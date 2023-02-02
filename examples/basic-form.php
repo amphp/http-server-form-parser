@@ -4,13 +4,13 @@
 require \dirname(__DIR__) . "/vendor/autoload.php";
 
 use Amp\ByteStream;
+use Amp\Http\HttpStatus;
 use Amp\Http\Server\DefaultErrorHandler;
 use Amp\Http\Server\FormParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Server\SocketHttpServer;
-use Amp\Http\Status;
 use Amp\Log\ConsoleFormatter;
 use Amp\Log\StreamHandler;
 use Amp\Socket;
@@ -44,7 +44,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
         HTML;
 
         return new Response(
-            status: Status::OK,
+            status: HttpStatus::OK,
             headers: ["content-type" => "text/html; charset=utf-8"],
             body: $html,
         );
@@ -60,7 +60,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
     HTML;
 
     return new Response(
-        status: Status::OK,
+        status: HttpStatus::OK,
         headers: ["content-type" => "text/html; charset=utf-8"],
         body: \str_replace('{input}', \htmlspecialchars($form->getValue("test") ?? "World"), $html)
     );

@@ -77,6 +77,7 @@ final class StreamingParser
             }
 
             $boundarySeparator = "\r\n$boundarySeparator";
+            $end = 0; // For Psalm
 
             while (\substr_compare($buffer, "--\r\n", $offset)) {
                 $offset += 2;
@@ -174,6 +175,7 @@ final class StreamingParser
 
         try {
             $buffer = "";
+            $nextPos = 0; // For Psalm
 
             while (null !== $chunk = $body->read()) {
                 if ($chunk === "") {

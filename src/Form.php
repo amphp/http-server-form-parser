@@ -32,7 +32,7 @@ final class Form
      *
      * File fields are not returned by this method.
      *
-     * @return list<non-empty-string>
+     * @return list<string>
      */
     public function getValueArray(string $name): array
     {
@@ -100,6 +100,7 @@ final class Form
      */
     public function getNames(): array
     {
-        return $this->names ??= \array_map(strval(...), \array_keys($this->fields));
+        /** @psalm-suppress PropertyTypeCoercion */
+        return $this->names ??= \array_map(\strval(...), \array_keys($this->fields));
     }
 }

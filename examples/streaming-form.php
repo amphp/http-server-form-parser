@@ -4,6 +4,7 @@
 require \dirname(__DIR__) . "/vendor/autoload.php";
 
 use Amp\ByteStream;
+use Amp\Http\HttpStatus;
 use Amp\Http\Server\DefaultErrorHandler;
 use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingParser;
@@ -11,7 +12,6 @@ use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Server\SocketHttpServer;
-use Amp\Http\Status;
 use Amp\Log\ConsoleFormatter;
 use Amp\Log\StreamHandler;
 use Amp\Socket;
@@ -45,7 +45,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
         HTML;
 
         return new Response(
-            status: Status::OK,
+            status: HttpStatus::OK,
             headers: ["content-type" => "text/html; charset=utf-8"],
             body: $html,
         );
@@ -63,7 +63,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
             $html = '<html lang="en"><body><a href="/">← back</a><br>sha1: ' . \sha1($field->buffer()) . '</body></html>';
 
             return new Response(
-                status: Status::OK,
+                status: HttpStatus::OK,
                 headers: ["content-type" => "text/html; charset=utf-8"],
                 body: $html,
             );
@@ -73,7 +73,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
     $html = '<html lang="en"><body><a href="/">← back</a><br>Uploaded file not found...</body></html>';
 
     return new Response(
-        status: Status::NOT_FOUND,
+        status: HttpStatus::NOT_FOUND,
         headers: ["content-type" => "text/html; charset=utf-8"],
         body: $html,
     );

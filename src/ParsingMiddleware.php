@@ -7,7 +7,7 @@ use Amp\Http\Server\Middleware;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
-use Amp\Http\Status;
+use Amp\Http\HttpStatus;
 
 final class ParsingMiddleware implements Middleware
 {
@@ -25,7 +25,7 @@ final class ParsingMiddleware implements Middleware
         try {
             $request->setAttribute(Form::class, $this->parser->parseForm($request));
         } catch (ParseException) {
-            return $this->errorHandler->handleError(Status::BAD_REQUEST, request: $request);
+            return $this->errorHandler->handleError(HttpStatus::BAD_REQUEST, request: $request);
         }
 
         return $requestHandler->handleRequest($request);

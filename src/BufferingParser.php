@@ -95,8 +95,10 @@ final class BufferingParser
         }
 
         $exp = \explode("\r\n--$boundary\r\n", $body, $this->fieldCountLimit);
-        $exp[0] = \substr($exp[0], \strlen($boundary) + 4);
+        $exp[0] = \substr($exp[0] ?? "", \strlen($boundary) + 4);
         $exp[\count($exp) - 1] = \substr(\end($exp), 0, -\strlen($boundary) - 8);
+
+        $entry = ''; // For Psalm
 
         foreach ($exp as $entry) {
             if (($position = \strpos($entry, "\r\n\r\n")) === false) {
@@ -128,6 +130,7 @@ final class BufferingParser
 
             // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
 
+            /** @var non-empty-string $name */
             $name = $matches[1];
             $contentType = $headerMap["content-type"][0] ?? "text/plain";
 
@@ -138,7 +141,7 @@ final class BufferingParser
             }
         }
 
-        if (\str_contains($entry ?? "", "--$boundary")) {
+        if (\str_contains($entry, "--$boundary")) {
             throw new ParseException("Maximum number of variables exceeded");
         }
 

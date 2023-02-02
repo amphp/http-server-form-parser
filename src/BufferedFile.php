@@ -2,14 +2,14 @@
 
 namespace Amp\Http\Server\FormParser;
 
-use Amp\Http\Message;
+use Amp\Http\HttpMessage;
 
 final class BufferedFile
 {
-    private readonly Message $message;
+    private readonly HttpMessage $message;
 
     /**
-     * @param list<array{string, string}> $rawHeaders Headers produced by
+     * @param list<array{non-empty-string, string}> $rawHeaders Headers produced by
      * {@see \Amp\Http\Rfc7230::parseRawHeaders()}
      */
     public function __construct(
