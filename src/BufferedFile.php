@@ -9,7 +9,7 @@ final class BufferedFile
     private readonly Message $message;
 
     /**
-     * @param array<int, array{string, string} $rawHeaders Headers produced by
+     * @param list<array{string, string}> $rawHeaders Headers produced by
      * {@see \Amp\Http\Rfc7230::parseRawHeaders()}
      */
     public function __construct(

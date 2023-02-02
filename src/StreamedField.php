@@ -6,19 +6,26 @@ use Amp\ByteStream\BufferException;
 use Amp\ByteStream\Payload;
 use Amp\ByteStream\ReadableBuffer;
 use Amp\ByteStream\ReadableStream;
+use Amp\ByteStream\ReadableStreamIteratorAggregate;
 use Amp\ByteStream\StreamException;
 use Amp\Cancellation;
-use Amp\Http\Message;
+use Amp\Http\HttpMessage;
+use Amp\Http\Rfc7230;
 
-final class StreamedField implements ReadableStream
+/**
+ * @implements \IteratorAggregate<int, string>
+ */
+final class StreamedField implements ReadableStream, \IteratorAggregate
 {
-    private readonly Message $message;
+    use ReadableStreamIteratorAggregate;
+
+    private readonly HttpMessage $message;
 
     private readonly Payload $payload;
 
     /**
-     * @param array<int, array{string, string} $rawHeaders Headers produced by
-     * {@see \Amp\Http\Rfc7230::parseRawHeaders()}
+     * @param list<array{non-empty-string, string}> $rawHeaders Headers produced by
+     * {@see Rfc7230::parseRawHeaders()}
      */
     public function __construct(
         private readonly string $name,
@@ -51,16 +58,29 @@ final class StreamedField implements ReadableStream
         return $this->filename !== null;
     }
 
+    /**
+     * @return array<non-empty-string, list<string>>
+     *
+     * @see HttpMessage::getHeaders()
+     */
     public function getHeaders(): array
     {
         return $this->message->getHeaders();
     }
 
+    /**
+     * @return list<array{non-empty-string, string}>
+     *
+     * @see HttpMessage::getRawHeaders()
+     */
     public function getRawHeaders(): array
     {
         return $this->message->getRawHeaders();
     }
 
+    /**
+     * @see HttpMessage::getHeader()
+     */
     public function getHeader(string $name): ?string
     {
         return $this->message->getHeader($name);

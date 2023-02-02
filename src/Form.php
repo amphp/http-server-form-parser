@@ -4,12 +4,12 @@ namespace Amp\Http\Server\FormParser;
 
 final class Form
 {
-    /** @var list<string>|null */
+    /** @var list<non-empty-string>|null */
     private ?array $names = null;
 
     /**
-     * @param array<string, list<string>> $fields
-     * @param array<string, list<BufferedFile>> $files
+     * @param array<non-empty-string, list<string>> $fields
+     * @param array<non-empty-string, list<BufferedFile>> $files
      */
     public function __construct(
         private readonly array $fields,
@@ -32,7 +32,7 @@ final class Form
      *
      * File fields are not returned by this method.
      *
-     * @return list<string>
+     * @return list<non-empty-string>
      */
     public function getValueArray(string $name): array
     {
@@ -50,7 +50,7 @@ final class Form
      *
      * File fields are not returned by this method.
      *
-     * @return array<string, list<string>>
+     * @return array<non-empty-string, list<string>>
      */
     public function getValues(): array
     {

@@ -57,12 +57,17 @@ final class BufferingParser
      */
     public function parseUrlEncodedBody(string $body): Form
     {
+        $pair = [];
         $fields = [];
 
         foreach (\explode("&", $body, $this->fieldCountLimit) as $pair) {
             $pair = \explode("=", $pair, 2);
             $field = \urldecode($pair[0]);
             $value = \urldecode($pair[1] ?? "");
+
+            if ($field === '') {
+                throw new ParseException("Empty field name in form data");
+            }
 
             $fields[$field][] = $value;
         }
