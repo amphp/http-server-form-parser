@@ -51,10 +51,8 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
         );
     }
 
-    $request->getBody()->increaseSizeLimit(120 * 1024 * 1024);
-
     $parser = new StreamingParser;
-    $fields = $parser->parseForm($request);
+    $fields = $parser->parseForm($request, bodySizeLimit: 120 * 1024 * 1024);
 
     /** @var StreamedField $field */
     while ($fields->continue()) {

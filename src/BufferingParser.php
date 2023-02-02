@@ -25,18 +25,23 @@ final class BufferingParser
      *
      * If the content-type doesn't match the supported form content types, the body isn't consumed.
      */
-    public function parseForm(Request $request): Form
+    public function parseForm(Request $request, ?int $bodySizeLimit = null): Form
     {
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
         if ($boundary === null) {
             return new Form([]);
         }
 
-        $body = $request->getBody()->buffer();
+        $body = $request->getBody();
+        if ($bodySizeLimit !== null) {
+            $body->increaseSizeLimit($bodySizeLimit);
+        }
+
+        $buffer = $body->buffer();
 
         return $boundary === ''
-            ? $this->parseUrlEncodedBody($body)
-            : $this->parseMultipartBody($body, $boundary);
+            ? $this->parseUrlEncodedBody($buffer)
+            : $this->parseMultipartBody($buffer, $boundary);
     }
 
     /**

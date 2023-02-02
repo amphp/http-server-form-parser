@@ -7,7 +7,6 @@ use Amp\ByteStream\ReadableStream;
 use Amp\Http\InvalidHeaderException;
 use Amp\Http\Rfc7230;
 use Amp\Http\Server\Request;
-use Amp\Pipeline\ConcurrentIterator;
 use Amp\Pipeline\DisposedException;
 use Amp\Pipeline\Pipeline;
 use Amp\Pipeline\Queue;
@@ -24,9 +23,9 @@ final class StreamingParser
     }
 
     /**
-     * @return ConcurrentIterator<StreamedField>
+     * @return \Traversable<int, StreamedField>
      */
-    public function parseForm(Request $request): ConcurrentIterator
+    public function parseForm(Request $request, ?int $bodySizeLimit = null): \Traversable
     {
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
         if ($boundary === null) {
@@ -36,13 +35,16 @@ final class StreamingParser
         $source = new Queue();
         $pipeline = $source->pipe();
 
-        EventLoop::queue(function () use ($boundary, $source, $request): void {
+        $body = $request->getBody();
+        if ($bodySizeLimit !== null) {
+            $body->increaseSizeLimit($bodySizeLimit);
+        }
+
+        EventLoop::queue(function () use ($boundary, $source, $body): void {
             try {
-                if ($boundary !== '') {
-                    $this->incrementalBoundaryParse($source, $request->getBody(), $boundary);
-                } else {
-                    $this->incrementalFieldParse($source, $request->getBody());
-                }
+                $boundary === ''
+                    ? $this->incrementalFieldParse($source, $body)
+                    : $this->incrementalBoundaryParse($source, $body, $boundary);
 
                 $source->complete();
             } catch (\Throwable $e) {

@@ -7,15 +7,12 @@ use Amp\Http\Server\Request;
 /**
  * Try parsing the request's body with either application/x-www-form-urlencoded or multipart/form-data.
  */
-function parseForm(Request $request): Form
+function parseForm(Request $request, int $bodySizeLimit = null): Form
 {
     static $parser;
+    $parser ??= new BufferingParser;
 
-    if ($parser === null) {
-        $parser = new BufferingParser;
-    }
-
-    return $parser->parseForm($request);
+    return $parser->parseForm($request, $bodySizeLimit);
 }
 
 /**
