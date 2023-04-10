@@ -3,7 +3,7 @@
 namespace Amp\Http\Server\FormParser;
 
 use Amp\Http\InvalidHeaderException;
-use Amp\Http\Rfc7230;
+use Amp\Http\Http1\Rfc7230;
 use Amp\Http\Server\Request;
 
 /**
@@ -111,7 +111,7 @@ final class BufferingParser
             }
 
             try {
-                $headers = Rfc7230::parseRawHeaders(\substr($entry, 0, $position + 2));
+                $headers = Rfc7230::parseHeaderPairs(\substr($entry, 0, $position + 2));
             } catch (InvalidHeaderException $e) {
                 throw new ParseException("Invalid headers in body part", 0, $e);
             }

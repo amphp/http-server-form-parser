@@ -5,7 +5,7 @@ namespace Amp\Http\Server\FormParser;
 use Amp\ByteStream\ReadableIterableStream;
 use Amp\ByteStream\ReadableStream;
 use Amp\Http\InvalidHeaderException;
-use Amp\Http\Rfc7230;
+use Amp\Http\Http1\Rfc7230;
 use Amp\Http\Server\Request;
 use Amp\Pipeline\DisposedException;
 use Amp\Pipeline\Pipeline;
@@ -97,7 +97,7 @@ final class StreamingParser
                 }
 
                 try {
-                    $headers = Rfc7230::parseRawHeaders(\substr($buffer, $offset, $end + 2 - $offset));
+                    $headers = Rfc7230::parseHeaderPairs(\substr($buffer, $offset, $end + 2 - $offset));
                 } catch (InvalidHeaderException $e) {
                     throw new ParseException("Invalid headers in body part", 0, $e);
                 }

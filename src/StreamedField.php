@@ -10,7 +10,7 @@ use Amp\ByteStream\ReadableStreamIteratorAggregate;
 use Amp\ByteStream\StreamException;
 use Amp\Cancellation;
 use Amp\Http\HttpMessage;
-use Amp\Http\Rfc7230;
+use Amp\Http\Http1\Rfc7230;
 
 /**
  * @implements \IteratorAggregate<int, string>
@@ -25,7 +25,7 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
 
     /**
      * @param list<array{non-empty-string, string}> $rawHeaders Headers produced by
-     * {@see Rfc7230::parseRawHeaders()}
+     * {@see Rfc7230::parseHeaderPairs()}
      */
     public function __construct(
         private readonly string $name,
