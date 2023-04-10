@@ -10,7 +10,7 @@ final class BufferedFile
 
     /**
      * @param list<array{non-empty-string, string}> $rawHeaders Headers produced by
-     * {@see \Amp\Http\Rfc7230::parseRawHeaders()}
+     * {@see \Amp\Http\Http1\Rfc7230::parseHeaderPairs()}
      */
     public function __construct(
         private readonly string $name,
