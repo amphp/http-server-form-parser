@@ -4,8 +4,8 @@ namespace Amp\Http\Server\FormParser;
 
 use Amp\ByteStream\ReadableIterableStream;
 use Amp\ByteStream\ReadableStream;
-use Amp\Http\InvalidHeaderException;
 use Amp\Http\Http1\Rfc7230;
+use Amp\Http\InvalidHeaderException;
 use Amp\Http\Server\Request;
 use Amp\Pipeline\DisposedException;
 use Amp\Pipeline\Pipeline;

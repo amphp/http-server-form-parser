@@ -9,8 +9,8 @@ use Amp\ByteStream\ReadableStream;
 use Amp\ByteStream\ReadableStreamIteratorAggregate;
 use Amp\ByteStream\StreamException;
 use Amp\Cancellation;
-use Amp\Http\HttpMessage;
 use Amp\Http\Http1\Rfc7230;
+use Amp\Http\HttpMessage;
 
 /**
  * @implements \IteratorAggregate<int, string>
