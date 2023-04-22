@@ -24,7 +24,7 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
     private readonly Payload $payload;
 
     /**
-     * @param list<array{non-empty-string, string}> $rawHeaders Headers produced by
+     * @param list<array{non-empty-string, string}> $headerPairs Headers produced by
      * {@see Rfc7230::parseHeaderPairs()}
      */
     public function __construct(
@@ -32,10 +32,10 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
         ?ReadableStream $stream = null,
         private readonly string $mimeType = "text/plain",
         private readonly ?string $filename = null,
-        array $rawHeaders = [],
+        array $headerPairs = [],
     ) {
         $this->payload = new Payload($stream ?? new ReadableBuffer());
-        $this->message = new Internal\FieldMessage($rawHeaders);
+        $this->message = new Internal\FieldMessage($headerPairs);
     }
 
     public function getName(): string
@@ -71,11 +71,11 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
     /**
      * @return list<array{non-empty-string, string}>
      *
-     * @see HttpMessage::getRawHeaders()
+     * @see HttpMessage::getHeaderPairs()
      */
-    public function getRawHeaders(): array
+    public function getHeaderPairs(): array
     {
-        return $this->message->getRawHeaders();
+        return $this->message->getHeaderPairs();
     }
 
     /**

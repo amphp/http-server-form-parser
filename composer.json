@@ -32,10 +32,10 @@
         "php": ">=8.1",
         "amphp/amp": "^3",
         "amphp/byte-stream": "^2",
-        "amphp/http": "^2-dev",
+        "amphp/http": "^2",
         "amphp/http-server": "^3",
         "amphp/pipeline": "^1",
-        "revolt/event-loop": "^1 || ^0.2.4"
+        "revolt/event-loop": "^1"
     },
     "require-dev": {
         "amphp/php-cs-fixer-config": "^2",
@@ -44,7 +44,7 @@
         "amphp/log": "^2",
         "psalm/phar": "^5.6"
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "beta",
     "prefer-stable": true,
     "autoload": {
         "psr-4": {

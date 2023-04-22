@@ -9,16 +9,16 @@ final class BufferedFile
     private readonly HttpMessage $message;
 
     /**
-     * @param list<array{non-empty-string, string}> $rawHeaders Headers produced by
+     * @param list<array{non-empty-string, string}> $headerPairs Headers produced by
      * {@see \Amp\Http\Http1\Rfc7230::parseHeaderPairs()}
      */
     public function __construct(
         private readonly string $name,
         private readonly string $contents = "",
         private readonly string $mimeType = "text/plain",
-        array $rawHeaders = [],
+        array $headerPairs = [],
     ) {
-        $this->message = new Internal\FieldMessage($rawHeaders);
+        $this->message = new Internal\FieldMessage($headerPairs);
     }
 
     public function getName(): string
@@ -41,14 +41,24 @@ final class BufferedFile
         return $this->mimeType;
     }
 
+    /**
+     * @return array<non-empty-string, list<string>>
+     *
+     * @see HttpMessage::getHeaders()
+     */
     public function getHeaders(): array
     {
         return $this->message->getHeaders();
     }
 
-    public function getRawHeaders(): array
+    /**
+     * @return list<array{non-empty-string, string}>
+     *
+     * @see HttpMessage::getHeaderPairs()
+     */
+    public function getHeaderPairs(): array
     {
-        return $this->message->getRawHeaders();
+        return $this->message->getHeaderPairs();
     }
 
     public function getHeader(string $name): ?string

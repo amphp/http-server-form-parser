@@ -17,7 +17,7 @@ final class BufferingParser
 
     public function __construct(?int $fieldCountLimit = null)
     {
-        $this->fieldCountLimit = $fieldCountLimit ?? (int) \ini_get('max_input_vars') ?: 1000;
+        $this->fieldCountLimit = $fieldCountLimit ?? (int) (\ini_get('max_input_vars') ?: 1000);
     }
 
     /**
