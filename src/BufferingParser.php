@@ -2,6 +2,8 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Http\Http1\Rfc7230;
 use Amp\Http\InvalidHeaderException;
 use Amp\Http\Server\Request;
@@ -12,6 +14,9 @@ use Amp\Http\Server\Request;
  */
 final class BufferingParser
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /** @var int Prevent requests from creating arbitrary many fields causing lot of processing time */
     private readonly int $fieldCountLimit;
 

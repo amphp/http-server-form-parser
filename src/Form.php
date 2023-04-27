@@ -2,8 +2,14 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
+
 final class Form
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     /** @var list<non-empty-string>|null */
     private ?array $names = null;
 

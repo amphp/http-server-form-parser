@@ -9,6 +9,8 @@ use Amp\ByteStream\ReadableStream;
 use Amp\ByteStream\ReadableStreamIteratorAggregate;
 use Amp\ByteStream\StreamException;
 use Amp\Cancellation;
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Http\Http1\Rfc7230;
 use Amp\Http\HttpMessage;
 
@@ -17,6 +19,8 @@ use Amp\Http\HttpMessage;
  */
 final class StreamedField implements ReadableStream, \IteratorAggregate
 {
+    use ForbidCloning;
+    use ForbidSerialization;
     use ReadableStreamIteratorAggregate;
 
     private readonly HttpMessage $message;

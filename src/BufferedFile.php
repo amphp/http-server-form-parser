@@ -2,10 +2,15 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Http\HttpMessage;
 
 final class BufferedFile
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private readonly HttpMessage $message;
 
     /**

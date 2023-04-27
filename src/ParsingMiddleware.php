@@ -2,6 +2,8 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\ForbidCloning;
+use Amp\ForbidSerialization;
 use Amp\Http\HttpStatus;
 use Amp\Http\Server\ErrorHandler;
 use Amp\Http\Server\Middleware;
@@ -11,6 +13,9 @@ use Amp\Http\Server\Response;
 
 final class ParsingMiddleware implements Middleware
 {
+    use ForbidCloning;
+    use ForbidSerialization;
+
     private readonly BufferingParser $parser;
 
     public function __construct(
