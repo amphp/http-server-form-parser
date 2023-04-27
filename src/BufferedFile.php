@@ -4,8 +4,13 @@ namespace Amp\Http\Server\FormParser;
 
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
+use Amp\Http\Http1\Rfc7230;
 use Amp\Http\HttpMessage;
 
+/**
+ * @psalm-import-type HeaderPairsType from HttpMessage
+ * @psalm-import-type HeaderMapType from HttpMessage
+ */
 final class BufferedFile
 {
     use ForbidCloning;
@@ -14,8 +19,7 @@ final class BufferedFile
     private readonly HttpMessage $message;
 
     /**
-     * @param list<array{non-empty-string, string}> $headerPairs Headers produced by
-     * {@see \Amp\Http\Http1\Rfc7230::parseHeaderPairs()}
+     * @param HeaderPairsType $headerPairs Headers produced by {@see Rfc7230::parseHeaderPairs()}.
      */
     public function __construct(
         private readonly string $name,
@@ -47,7 +51,7 @@ final class BufferedFile
     }
 
     /**
-     * @return array<non-empty-string, list<string>>
+     * @return HeaderMapType
      *
      * @see HttpMessage::getHeaders()
      */
@@ -57,7 +61,7 @@ final class BufferedFile
     }
 
     /**
-     * @return list<array{non-empty-string, string}>
+     * @return HeaderPairsType
      *
      * @see HttpMessage::getHeaderPairs()
      */
@@ -66,6 +70,9 @@ final class BufferedFile
         return $this->message->getHeaderPairs();
     }
 
+    /**
+     * @see HttpMessage::getHeader()
+     */
     public function getHeader(string $name): ?string
     {
         return $this->message->getHeader($name);

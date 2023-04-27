@@ -15,6 +15,9 @@ use Amp\Http\Http1\Rfc7230;
 use Amp\Http\HttpMessage;
 
 /**
+ * @psalm-import-type HeaderPairsType from HttpMessage
+ * @psalm-import-type HeaderMapType from HttpMessage
+ *
  * @implements \IteratorAggregate<int, string>
  */
 final class StreamedField implements ReadableStream, \IteratorAggregate
@@ -28,8 +31,7 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
     private readonly Payload $payload;
 
     /**
-     * @param list<array{non-empty-string, string}> $headerPairs Headers produced by
-     * {@see Rfc7230::parseHeaderPairs()}
+     * @param HeaderPairsType $headerPairs Headers produced by {@see Rfc7230::parseHeaderPairs()}.
      */
     public function __construct(
         private readonly string $name,
@@ -63,7 +65,7 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
     }
 
     /**
-     * @return array<non-empty-string, list<string>>
+     * @return HeaderMapType
      *
      * @see HttpMessage::getHeaders()
      */
@@ -73,7 +75,7 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
     }
 
     /**
-     * @return list<array{non-empty-string, string}>
+     * @return HeaderPairsType
      *
      * @see HttpMessage::getHeaderPairs()
      */
