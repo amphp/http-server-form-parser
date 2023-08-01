@@ -11,7 +11,7 @@ use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
 use Amp\PHPUnit\AsyncTestCase;
 use League\Uri;
-use function Amp\Http\Server\Middleware\stack;
+use function Amp\Http\Server\Middleware\stackMiddleware;
 
 class ParsingMiddlewareTest extends AsyncTestCase
 {
@@ -27,7 +27,7 @@ class ParsingMiddlewareTest extends AsyncTestCase
     {
         $callback = $this->createCallback(1);
 
-        $handler = stack(new ClosureRequestHandler(function (Request $request) use ($callback): Response {
+        $handler = stackMiddleware(new ClosureRequestHandler(function (Request $request) use ($callback): Response {
             if ($request->hasAttribute(Form::class)) {
                 $callback();
 
@@ -49,7 +49,7 @@ class ParsingMiddlewareTest extends AsyncTestCase
 
     public function testNonForm(): void
     {
-        $handler = stack(new ClosureRequestHandler(function (Request $request): Response {
+        $handler = stackMiddleware(new ClosureRequestHandler(function (Request $request): Response {
             $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
             $this->assertSame('{}', $request->getBody()->buffer());
             return new Response;
@@ -64,7 +64,7 @@ class ParsingMiddlewareTest extends AsyncTestCase
 
     public function testNone(): void
     {
-        $handler = stack(new ClosureRequestHandler(function (Request $request): Response {
+        $handler = stackMiddleware(new ClosureRequestHandler(function (Request $request): Response {
             $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
             return new Response;
         }), $this->middleware);
