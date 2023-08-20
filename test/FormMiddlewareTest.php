@@ -5,7 +5,7 @@ namespace Amp\Http\Server\FormParser\Test;
 use Amp\Http\Server\DefaultErrorHandler;
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\FormParser\Form;
-use Amp\Http\Server\FormParser\ParsingMiddleware;
+use Amp\Http\Server\FormParser\FormMiddleware;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
@@ -13,14 +13,14 @@ use Amp\PHPUnit\AsyncTestCase;
 use League\Uri;
 use function Amp\Http\Server\Middleware\stackMiddleware;
 
-class ParsingMiddlewareTest extends AsyncTestCase
+class FormMiddlewareTest extends AsyncTestCase
 {
-    private ParsingMiddleware $middleware;
+    private FormMiddleware $middleware;
 
     public function setUp(): void
     {
         parent::setUp();
-        $this->middleware = new ParsingMiddleware(new DefaultErrorHandler());
+        $this->middleware = new FormMiddleware(new DefaultErrorHandler());
     }
 
     public function testWwwFormUrlencoded(): void

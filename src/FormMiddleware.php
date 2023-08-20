@@ -11,7 +11,7 @@ use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
 
-final class ParsingMiddleware implements Middleware
+final class FormMiddleware implements Middleware
 {
     use ForbidCloning;
     use ForbidSerialization;
