@@ -7,7 +7,7 @@ use Amp\ByteStream;
 use Amp\Http\HttpStatus;
 use Amp\Http\Server\DefaultErrorHandler;
 use Amp\Http\Server\FormParser\StreamedField;
-use Amp\Http\Server\FormParser\StreamingParser;
+use Amp\Http\Server\FormParser\StreamingFormParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
@@ -51,7 +51,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
         );
     }
 
-    $parser = new StreamingParser;
+    $parser = new StreamingFormParser;
     $fields = $parser->parseForm($request, bodySizeLimit: 120 * 1024 * 1024);
 
     /** @var StreamedField $field */

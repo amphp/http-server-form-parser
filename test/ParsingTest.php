@@ -7,7 +7,7 @@ use Amp\ByteStream\ReadableIterableStream;
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\FormParser\BufferingParser;
 use Amp\Http\Server\FormParser\StreamedField;
-use Amp\Http\Server\FormParser\StreamingParser;
+use Amp\Http\Server\FormParser\StreamingFormParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestBody;
 use Amp\PHPUnit\AsyncTestCase;
@@ -142,7 +142,7 @@ MULTIPART;
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
         $key = 0;
 
-        $iterator = (new StreamingParser)->parseForm($request);
+        $iterator = (new StreamingFormParser)->parseForm($request);
 
         while ($iterator->continue()) {
             $parsedField = $iterator->getValue();

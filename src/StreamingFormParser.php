@@ -14,7 +14,7 @@ use Amp\Pipeline\Pipeline;
 use Amp\Pipeline\Queue;
 use Revolt\EventLoop;
 
-final class StreamingParser
+final class StreamingFormParser
 {
     use ForbidCloning;
     use ForbidSerialization;
