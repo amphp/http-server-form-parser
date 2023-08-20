@@ -74,13 +74,13 @@ final class StreamingFormParser
                 $buffer .= $chunk = $body->read();
 
                 if ($chunk === null) {
-                    throw new ParseException("Request body ended unexpectedly");
+                    throw new FormException("Request body ended unexpectedly");
                 }
             }
 
             $offset = \strlen($boundarySeparator);
             if (\strncmp($buffer, $boundarySeparator, $offset)) {
-                throw new ParseException("Invalid boundary");
+                throw new FormException("Invalid boundary");
             }
 
             $boundarySeparator = "\r\n$boundarySeparator";
@@ -93,18 +93,18 @@ final class StreamingFormParser
                     $buffer .= $chunk = $body->read();
 
                     if ($chunk === null) {
-                        throw new ParseException("Request body ended unexpectedly");
+                        throw new FormException("Request body ended unexpectedly");
                     }
                 }
 
                 if ($fieldCount++ === $this->fieldCountLimit) {
-                    throw new ParseException("Maximum number of variables exceeded");
+                    throw new FormException("Maximum number of variables exceeded");
                 }
 
                 try {
                     $headers = Rfc7230::parseHeaderPairs(\substr($buffer, $offset, $end + 2 - $offset));
                 } catch (InvalidHeaderException $e) {
-                    throw new ParseException("Invalid headers in body part", 0, $e);
+                    throw new FormException("Invalid headers in body part", 0, $e);
                 }
 
                 $headerMap = [];
@@ -119,7 +119,7 @@ final class StreamingFormParser
                 );
 
                 if (!$count || !isset($matches[1])) {
-                    throw new ParseException("Invalid content-disposition header within multipart form");
+                    throw new FormException("Invalid content-disposition header within multipart form");
                 }
 
                 $fieldName = $matches[1];
@@ -150,7 +150,7 @@ final class StreamingFormParser
                     $buffer .= $chunk = $body->read();
 
                     if ($chunk === null) {
-                        throw new ParseException("Request body ended unexpectedly");
+                        throw new FormException("Request body ended unexpectedly");
                     }
                 }
 
@@ -163,7 +163,7 @@ final class StreamingFormParser
                     $buffer .= $chunk = $body->read();
 
                     if ($chunk === null) {
-                        throw new ParseException("Request body ended unexpectedly");
+                        throw new FormException("Request body ended unexpectedly");
                     }
                 }
 
@@ -201,7 +201,7 @@ final class StreamingFormParser
                     $queue = new Queue();
 
                     if ($fieldCount++ === $this->fieldCountLimit) {
-                        throw new ParseException("Maximum number of variables exceeded");
+                        throw new FormException("Maximum number of variables exceeded");
                     }
 
                     $future = $source->pushAsync(new StreamedField(
@@ -266,7 +266,7 @@ final class StreamingFormParser
                 $buffer = \substr($buffer, $nextPos + 1);
 
                 if ($fieldCount++ === $this->fieldCountLimit) {
-                    throw new ParseException("Maximum number of variables exceeded");
+                    throw new FormException("Maximum number of variables exceeded");
                 }
 
                 $source->push(new StreamedField($fieldName));
@@ -276,7 +276,7 @@ final class StreamingFormParser
 
             if ($buffer) {
                 if ($fieldCount + 1 === $this->fieldCountLimit) {
-                    throw new ParseException("Maximum number of variables exceeded");
+                    throw new FormException("Maximum number of variables exceeded");
                 }
 
                 $source->push(new StreamedField(\urldecode($buffer)));

@@ -76,14 +76,14 @@ final class FormParser
             $value = \urldecode($pair[1] ?? "");
 
             if ($field === '') {
-                throw new ParseException("Empty field name in form data");
+                throw new FormException("Empty field name in form data");
             }
 
             $fields[$field][] = $value;
         }
 
         if (\str_contains($pair[1] ?? "", "&")) {
-            throw new ParseException("Maximum number of variables exceeded");
+            throw new FormException("Maximum number of variables exceeded");
         }
 
         return new Form($fields);
@@ -112,13 +112,13 @@ final class FormParser
 
         foreach ($exp as $entry) {
             if (($position = \strpos($entry, "\r\n\r\n")) === false) {
-                throw new ParseException("No header/body boundary found");
+                throw new FormException("No header/body boundary found");
             }
 
             try {
                 $headers = Rfc7230::parseHeaderPairs(\substr($entry, 0, $position + 2));
             } catch (InvalidHeaderException $e) {
-                throw new ParseException("Invalid headers in body part", 0, $e);
+                throw new FormException("Invalid headers in body part", 0, $e);
             }
 
             $headerMap = [];
@@ -135,7 +135,7 @@ final class FormParser
             );
 
             if (!$count || !isset($matches[1])) {
-                throw new ParseException("Missing or invalid content disposition");
+                throw new FormException("Missing or invalid content disposition");
             }
 
             // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
@@ -152,7 +152,7 @@ final class FormParser
         }
 
         if (\str_contains($entry, "--$boundary")) {
-            throw new ParseException("Maximum number of variables exceeded");
+            throw new FormException("Maximum number of variables exceeded");
         }
 
         return new Form($fields, $files);

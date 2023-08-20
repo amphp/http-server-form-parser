@@ -30,7 +30,7 @@ final class FormMiddleware implements Middleware
     {
         try {
             $request->setAttribute(Form::class, $this->parser->parseForm($request, $this->bodySizeLimit));
-        } catch (ParseException) {
+        } catch (FormException) {
             return $this->errorHandler->handleError(HttpStatus::BAD_REQUEST, request: $request);
         }
 
