@@ -32,9 +32,15 @@ final class FormParser
      */
     public function parseForm(Request $request, ?int $bodySizeLimit = null): Form
     {
+        if ($request->hasAttribute(Form::class)) {
+            return $request->getAttribute(Form::class);
+        }
+
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
         if ($boundary === null) {
-            return new Form([]);
+            $request->setAttribute(Form::class, $form = new Form([]));
+
+            return $form;
         }
 
         $body = $request->getBody();
@@ -44,9 +50,13 @@ final class FormParser
 
         $buffer = $body->buffer();
 
-        return $boundary === ''
+        $form = $boundary === ''
             ? $this->parseUrlEncodedBody($buffer)
             : $this->parseMultipartBody($buffer, $boundary);
+
+        $request->setAttribute(Form::class, $form);
+
+        return $form;
     }
 
     /**
