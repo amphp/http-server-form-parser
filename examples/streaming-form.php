@@ -26,7 +26,7 @@ $logHandler->setFormatter(new ConsoleFormatter());
 $logger = new Logger('server');
 $logger->pushHandler($logHandler);
 
-$server = new SocketHttpServer($logger);
+$server = SocketHttpServer::createForDirectAccess($logger);
 
 $server->expose(new Socket\InternetAddress("0.0.0.0", 1337));
 $server->expose(new Socket\InternetAddress("[::]", 1337));
@@ -54,9 +54,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
     $parser = new StreamingFormParser;
     $fields = $parser->parseForm($request, bodySizeLimit: 120 * 1024 * 1024);
 
-    /** @var StreamedField $field */
-    while ($fields->continue()) {
-        $field = $fields->getValue();
+    foreach ($fields as $field) {
         if ($field->getName() === 'test') {
             $html = '<html lang="en"><body><a href="/">← back</a><br>sha1: ' . \sha1($field->buffer()) . '</body></html>';
 
@@ -78,7 +76,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
 }), new DefaultErrorHandler());
 
 // Await SIGINT, SIGTERM, or SIGSTOP to be received.
-$signal = Amp\trapSignal([\SIGINT, \SIGTERM, \SIGSTOP]);
+$signal = Amp\trapSignal([\SIGINT, \SIGTERM]);
 
 $logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
 
