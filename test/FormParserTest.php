@@ -3,8 +3,8 @@
 namespace Amp\Http\Server\FormParser\Test;
 
 use Amp\Http\Server\Driver\Client;
-use Amp\Http\Server\FormParser\FormParser;
 use Amp\Http\Server\FormParser\Form;
+use Amp\Http\Server\FormParser\FormParser;
 use Amp\Http\Server\Request;
 use Amp\PHPUnit\AsyncTestCase;
 use League\Uri\Http;
