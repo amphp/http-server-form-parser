@@ -16,14 +16,14 @@ final class FormMiddleware implements Middleware
     use ForbidCloning;
     use ForbidSerialization;
 
-    private readonly BufferingParser $parser;
+    private readonly FormParser $parser;
 
     public function __construct(
         private readonly ErrorHandler $errorHandler,
         private readonly ?int $bodySizeLimit = null,
         ?int $fieldCountLimit = null,
     ) {
-        $this->parser = new BufferingParser($fieldCountLimit);
+        $this->parser = new FormParser($fieldCountLimit);
     }
 
     public function handleRequest(Request $request, RequestHandler $requestHandler): Response

@@ -3,13 +3,13 @@
 namespace Amp\Http\Server\FormParser\Test;
 
 use Amp\Http\Server\Driver\Client;
-use Amp\Http\Server\FormParser\BufferingParser;
+use Amp\Http\Server\FormParser\FormParser;
 use Amp\Http\Server\FormParser\Form;
 use Amp\Http\Server\Request;
 use Amp\PHPUnit\AsyncTestCase;
 use League\Uri\Http;
 
-class BufferingParserTest extends AsyncTestCase
+class FormParserTest extends AsyncTestCase
 {
     public function testIssue6(): void
     {
@@ -21,7 +21,7 @@ class BufferingParserTest extends AsyncTestCase
             headers: ['content-type' => 'application/x-www-form-urlencoded'],
             body: $body,
         );
-        $form = (new BufferingParser())->parseForm($request);
+        $form = (new FormParser())->parseForm($request);
         \assert($form instanceof Form);
 
         $this->assertSame('&', $form->getValue('foobar'));

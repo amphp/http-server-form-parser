@@ -10,7 +10,7 @@ use Amp\Http\Server\Request;
 function parseForm(Request $request, int $bodySizeLimit = null): Form
 {
     static $parser;
-    $parser ??= new BufferingParser;
+    $parser ??= new FormParser;
 
     return $parser->parseForm($request, $bodySizeLimit);
 }

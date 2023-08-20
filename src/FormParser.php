@@ -12,7 +12,7 @@ use Amp\Http\Server\Request;
  * This class parses submitted forms from incoming request bodies in application/x-www-form-urlencoded and
  * multipart/form-data format.
  */
-final class BufferingParser
+final class FormParser
 {
     use ForbidCloning;
     use ForbidSerialization;

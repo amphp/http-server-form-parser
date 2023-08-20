@@ -5,7 +5,7 @@ namespace Amp\Http\Server\FormParser\Test;
 use Amp\ByteStream\ReadableBuffer;
 use Amp\ByteStream\ReadableIterableStream;
 use Amp\Http\Server\Driver\Client;
-use Amp\Http\Server\FormParser\BufferingParser;
+use Amp\Http\Server\FormParser\FormParser;
 use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingFormParser;
 use Amp\Http\Server\Request;
@@ -28,7 +28,7 @@ class ParsingTest extends AsyncTestCase
         $client = $this->createMock(Client::class);
         $request = new Request($client, "POST", Uri\Http::createFromString("/"), $headers, $body);
 
-        $form = (new BufferingParser)->parseForm($request);
+        $form = (new FormParser)->parseForm($request);
 
         foreach ($fields as $key => $value) {
             $this->assertSame($form->getValueArray($key), $value);
