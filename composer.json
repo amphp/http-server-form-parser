@@ -1,14 +1,15 @@
 {
     "name": "amphp/http-server-form-parser",
-    "homepage": "https://github.com/amphp/http-server-form-parser",
-    "description": "A form parser for Amp's HTTP parser.",
+    "homepage": "https://amphp.org/http-server-form-parser",
+    "description": "An HTTP server plugin that simplifies form data handling. Effortlessly parse incoming form submissions and extracting its data.",
     "keywords": [
         "http",
         "form",
         "async",
         "non-blocking",
         "amp",
-        "amphp"
+        "amphp",
+        "revolt"
     ],
     "license": "MIT",
     "authors": [
@@ -44,8 +45,6 @@
         "amphp/log": "^2",
         "psalm/phar": "^5.6"
     },
-    "minimum-stability": "beta",
-    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Amp\\Http\\Server\\FormParser\\": "src"
