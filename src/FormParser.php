@@ -2,6 +2,7 @@
 
 namespace Amp\Http\Server\FormParser;
 
+use Amp\ByteStream\StreamException;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Http\Http1\Rfc7230;
@@ -31,6 +32,8 @@ final class FormParser
      * Consumes the request's body and parses it.
      *
      * If the content-type doesn't match the supported form content types, the body isn't consumed.
+     *
+     * @throws HttpErrorException
      */
     public function parseForm(Request $request): Form
     {
@@ -41,7 +44,12 @@ final class FormParser
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
 
         // Don't consume body if we don't have a form content type
-        $body = $boundary === null ? '' : $request->getBody()->buffer();
+        try {
+            $body = $boundary === null ? '' : $request->getBody()->buffer();
+        } catch (StreamException) {
+            throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly");
+        }
+
         $form = $this->parseBody($body, $boundary);
 
         $request->setAttribute(Form::class, $form);
@@ -52,6 +60,8 @@ final class FormParser
     /**
      * @param string $body application/x-www-form-urlencoded or multipart/form-data body.
      * @param string|null $boundary Result from {@see parseContentBoundary()} from a content-type header.
+     *
+     * @throws HttpErrorException
      */
     public function parseBody(string $body, ?string $boundary): Form
     {

@@ -30,7 +30,7 @@ final class StreamingFormParser
     }
 
     /**
-     * @return \Traversable<int, StreamedField>
+     * @return \Traversable<int, StreamedField> Traversable throws {@see HttpErrorException} if parsing a field fails.
      */
     public function parseForm(Request $request, ?int $bodySizeLimit = null): \Traversable
     {
