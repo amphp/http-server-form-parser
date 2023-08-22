@@ -5,6 +5,7 @@ namespace Amp\Http\Server\FormParser;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Http\Http1\Rfc7230;
+use Amp\Http\HttpStatus;
 use Amp\Http\InvalidHeaderException;
 use Amp\Http\Server\HttpErrorException;
 use Amp\Http\Server\Request;
@@ -75,14 +76,14 @@ final class FormParser
             $value = \urldecode($pair[1] ?? "");
 
             if ($field === '') {
-                throw new HttpErrorException(400, "Empty field name in form data");
+                throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Empty field name in form data");
             }
 
             $fields[$field][] = $value;
         }
 
         if (\str_contains($pair[1] ?? "", "&")) {
-            throw new HttpErrorException(400, "Maximum number of variables exceeded");
+            throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Maximum number of variables exceeded");
         }
 
         return new Form($fields);
@@ -111,13 +112,13 @@ final class FormParser
 
         foreach ($exp as $entry) {
             if (($position = \strpos($entry, "\r\n\r\n")) === false) {
-                throw new HttpErrorException(400, "No header/body boundary found");
+                throw new HttpErrorException(HttpStatus::BAD_REQUEST, "No header/body boundary found");
             }
 
             try {
                 $headers = Rfc7230::parseHeaderPairs(\substr($entry, 0, $position + 2));
-            } catch (InvalidHeaderException $e) {
-                throw new HttpErrorException(400, "Invalid headers in body part", 0, $e);
+            } catch (InvalidHeaderException) {
+                throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Invalid headers in body part");
             }
 
             $headerMap = [];
@@ -134,7 +135,7 @@ final class FormParser
             );
 
             if (!$count || !isset($matches[1])) {
-                throw new HttpErrorException(400, "Missing or invalid content disposition");
+                throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Missing or invalid content disposition");
             }
 
             // Ignore Content-Transfer-Encoding as deprecated and hence we won't support it
@@ -151,7 +152,7 @@ final class FormParser
         }
 
         if (\str_contains($entry, "--$boundary")) {
-            throw new HttpErrorException(400, "Maximum number of variables exceeded");
+            throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Maximum number of variables exceeded");
         }
 
         return new Form($fields, $files);

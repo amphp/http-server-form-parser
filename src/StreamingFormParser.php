@@ -7,6 +7,7 @@ use Amp\ByteStream\ReadableStream;
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
 use Amp\Http\Http1\Rfc7230;
+use Amp\Http\HttpStatus;
 use Amp\Http\InvalidHeaderException;
 use Amp\Http\Server\HttpErrorException;
 use Amp\Http\Server\Request;
@@ -75,13 +76,13 @@ final class StreamingFormParser
                 $buffer .= $chunk = $body->read();
 
                 if ($chunk === null) {
-                    throw new HttpErrorException(400, "Request body ended unexpectedly");
+                    throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly");
                 }
             }
 
             $offset = \strlen($boundarySeparator);
             if (\strncmp($buffer, $boundarySeparator, $offset)) {
-                throw new HttpErrorException(400, "Invalid boundary");
+                throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Invalid boundary");
             }
 
             $boundarySeparator = "\r\n$boundarySeparator";
@@ -94,18 +95,18 @@ final class StreamingFormParser
                     $buffer .= $chunk = $body->read();
 
                     if ($chunk === null) {
-                        throw new HttpErrorException(400, "Request body ended unexpectedly");
+                        throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly");
                     }
                 }
 
                 if ($fieldCount++ === $this->fieldCountLimit) {
-                    throw new HttpErrorException(400, "Maximum number of variables exceeded");
+                    throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Maximum number of variables exceeded");
                 }
 
                 try {
                     $headers = Rfc7230::parseHeaderPairs(\substr($buffer, $offset, $end + 2 - $offset));
-                } catch (InvalidHeaderException $e) {
-                    throw new HttpErrorException(400, "Invalid headers in body part", 0, $e);
+                } catch (InvalidHeaderException) {
+                    throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Invalid headers in body part");
                 }
 
                 $headerMap = [];
@@ -120,7 +121,10 @@ final class StreamingFormParser
                 );
 
                 if (!$count || !isset($matches[1])) {
-                    throw new HttpErrorException(400, "Invalid content-disposition header within multipart form");
+                    throw new HttpErrorException(
+                        HttpStatus::BAD_REQUEST,
+                        "Invalid content-disposition header within multipart form",
+                    );
                 }
 
                 $fieldName = $matches[1];
@@ -151,7 +155,7 @@ final class StreamingFormParser
                     $buffer .= $chunk = $body->read();
 
                     if ($chunk === null) {
-                        throw new HttpErrorException(400, "Request body ended unexpectedly");
+                        throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly");
                     }
                 }
 
@@ -164,7 +168,7 @@ final class StreamingFormParser
                     $buffer .= $chunk = $body->read();
 
                     if ($chunk === null) {
-                        throw new HttpErrorException(400, "Request body ended unexpectedly");
+                        throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly");
                     }
                 }
 
@@ -202,7 +206,7 @@ final class StreamingFormParser
                     $queue = new Queue();
 
                     if ($fieldCount++ === $this->fieldCountLimit) {
-                        throw new HttpErrorException(400, "Maximum number of variables exceeded");
+                        throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Maximum number of variables exceeded");
                     }
 
                     $future = $source->pushAsync(new StreamedField(
@@ -267,7 +271,7 @@ final class StreamingFormParser
                 $buffer = \substr($buffer, $nextPos + 1);
 
                 if ($fieldCount++ === $this->fieldCountLimit) {
-                    throw new HttpErrorException(400, "Maximum number of variables exceeded");
+                    throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Maximum number of variables exceeded");
                 }
 
                 $source->push(new StreamedField($fieldName));
@@ -277,7 +281,7 @@ final class StreamingFormParser
 
             if ($buffer) {
                 if ($fieldCount + 1 === $this->fieldCountLimit) {
-                    throw new HttpErrorException(400, "Maximum number of variables exceeded");
+                    throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Maximum number of variables exceeded");
                 }
 
                 $source->push(new StreamedField(\urldecode($buffer)));
