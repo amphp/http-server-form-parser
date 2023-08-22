@@ -144,7 +144,7 @@ final class FormParser
             $contentType = $headerMap["content-type"][0] ?? "text/plain";
 
             if (isset($matches[2])) {
-                $files[$name][] = new BufferedFile($matches[2] ?? '', $entry, $contentType, $headers);
+                $files[$name][] = new BufferedFile($matches[2], $entry, $contentType, $headers);
             } else {
                 $fields[$name][] = $entry;
             }
