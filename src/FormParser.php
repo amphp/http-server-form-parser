@@ -31,29 +31,15 @@ final class FormParser
      *
      * If the content-type doesn't match the supported form content types, the body isn't consumed.
      */
-    public function parseForm(Request $request, ?int $bodySizeLimit = null): Form
+    public function parseForm(Request $request): Form
     {
         if ($request->hasAttribute(Form::class)) {
             return $request->getAttribute(Form::class);
         }
 
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
-        if ($boundary === null) {
-            $request->setAttribute(Form::class, $form = new Form([]));
 
-            return $form;
-        }
-
-        $body = $request->getBody();
-        if ($bodySizeLimit !== null) {
-            $body->increaseSizeLimit($bodySizeLimit);
-        }
-
-        $buffer = $body->buffer();
-
-        $form = $boundary === ''
-            ? $this->parseUrlEncodedBody($buffer)
-            : $this->parseMultipartBody($buffer, $boundary);
+        $form = $this->parseBody($request->getBody()->buffer(), $boundary);
 
         $request->setAttribute(Form::class, $form);
 
