@@ -4,11 +4,37 @@ namespace Amp\Http\Server\FormParser;
 
 use Amp\ForbidCloning;
 use Amp\ForbidSerialization;
+use Amp\Http\Server\Request;
 
 final class Form
 {
     use ForbidCloning;
     use ForbidSerialization;
+
+    private static FormParser $formParser;
+
+    /**
+     * Try parsing the request's body with either application/x-www-form-urlencoded or multipart/form-data.
+     */
+    public static function fromRequest(Request $request, ?FormParser $formParser = null): self
+    {
+        if ($request->hasAttribute(Form::class)) {
+            return $request->getAttribute(Form::class);
+        }
+
+        $form = ($formParser ?? self::getFormParser())->parseForm($request);
+
+        $request->setAttribute(Form::class, $form);
+
+        return $form;
+    }
+
+    private static function getFormParser(): FormParser
+    {
+        self::$formParser ??= new FormParser();
+
+        return self::$formParser;
+    }
 
     /** @var list<non-empty-string>|null */
     private ?array $names = null;

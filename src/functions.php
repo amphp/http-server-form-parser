@@ -2,22 +2,6 @@
 
 namespace Amp\Http\Server\FormParser;
 
-use Amp\Http\Server\HttpErrorException;
-use Amp\Http\Server\Request;
-
-/**
- * Try parsing the request's body with either application/x-www-form-urlencoded or multipart/form-data.
- *
- * @throws HttpErrorException
- */
-function parseForm(Request $request): Form
-{
-    static $parser;
-    $parser ??= new FormParser();
-
-    return $parser->parseForm($request);
-}
-
 /**
  * Parse the given content-type and returns the boundary if parsing is supported,
  * an empty string content-type is url-encoded mode or null if not supported.

@@ -6,7 +6,7 @@ require dirname(__DIR__) . "/vendor/autoload.php";
 use Amp\ByteStream;
 use Amp\Http\HttpStatus;
 use Amp\Http\Server\DefaultErrorHandler;
-use Amp\Http\Server\FormParser;
+use Amp\Http\Server\FormParser\Form;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
@@ -50,7 +50,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
         );
     }
 
-    $form = FormParser\parseForm($request);
+    $form = Form::fromRequest($request);
     $html = <<<HTML
     <html lang="en">
         <body>
