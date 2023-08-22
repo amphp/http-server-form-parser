@@ -2,9 +2,15 @@
 
 namespace Amp\Http\Server\FormParser\Test;
 
+use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\FormParser\BufferedFile;
 use Amp\Http\Server\FormParser\Form;
+use Amp\Http\Server\Request;
+use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
+use Amp\Http\Server\Response;
 use Amp\PHPUnit\AsyncTestCase;
+use League\Uri\Http;
+use function Amp\Http\Server\FormParser\parseForm;
 
 class FormTest extends AsyncTestCase
 {
@@ -40,5 +46,63 @@ class FormTest extends AsyncTestCase
         $this->assertSame([$file], $form->getFileArray("file"));
         $this->assertNull($form->getFile("file_not_found"));
         $this->assertTrue($form->hasFile("file"));
+    }
+
+    public function testWwwFormUrlencoded(): void
+    {
+        $callback = $this->createCallback(1);
+
+        $handler = new ClosureRequestHandler(function (Request $request) use ($callback): Response {
+            $callback();
+
+            $form = parseForm($request);
+
+            $this->assertSame('bar', $form->getValue('foo'));
+            $this->assertSame('y', $form->getValue('x'));
+
+            return new Response;
+        });
+
+        $request = new Request($this->createMock(Client::class), 'GET', Http::createFromString('/'), [
+            'content-type' => 'application/x-www-form-urlencoded',
+        ], 'foo=bar&x=y');
+
+        $handler->handleRequest($request);
+    }
+
+    public function testNonForm(): void
+    {
+        $handler = new ClosureRequestHandler(function (Request $request): Response {
+            parseForm($request);
+
+            $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
+            $this->assertSame('{}', $request->getBody()->buffer());
+
+            return new Response;
+        });
+
+        $request = new Request($this->createMock(Client::class), 'GET', Http::createFromString('/'), [
+            'content-type' => 'application/json',
+        ], '{}');
+
+        $handler->handleRequest($request);
+    }
+
+    public function testNone(): void
+    {
+        $handler = new ClosureRequestHandler(function (Request $request): Response {
+            $this->assertFalse($request->hasAttribute(Form::class));
+
+            $form = parseForm($request);
+            self::assertSame([], $form->getNames());
+
+            $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
+
+            return new Response;
+        });
+
+        $request = new Request($this->createMock(Client::class), 'GET', Http::createFromString('/'), [], '{}');
+
+        $handler->handleRequest($request);
     }
 }
