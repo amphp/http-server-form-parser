@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-require \dirname(__DIR__) . "/vendor/autoload.php";
+require dirname(__DIR__) . "/vendor/autoload.php";
 
 use Amp\ByteStream;
 use Amp\Http\HttpStatus;
@@ -62,13 +62,13 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
     return new Response(
         status: HttpStatus::OK,
         headers: ["content-type" => "text/html; charset=utf-8"],
-        body: \str_replace('{input}', \htmlspecialchars($form->getValue("test") ?? "World"), $html)
+        body: str_replace('{input}', htmlspecialchars($form->getValue("test") ?? "World"), $html)
     );
 }), new DefaultErrorHandler());
 
 // Await SIGINT, SIGTERM, or SIGSTOP to be received.
 $signal = Amp\trapSignal([\SIGINT, \SIGTERM]);
 
-$logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
+$logger->info(sprintf("Received signal %d, stopping HTTP server", $signal));
 
 $server->stop();

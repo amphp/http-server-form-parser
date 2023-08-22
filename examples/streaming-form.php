@@ -1,12 +1,11 @@
 #!/usr/bin/env php
 <?php
 
-require \dirname(__DIR__) . "/vendor/autoload.php";
+require dirname(__DIR__) . "/vendor/autoload.php";
 
 use Amp\ByteStream;
 use Amp\Http\HttpStatus;
 use Amp\Http\Server\DefaultErrorHandler;
-use Amp\Http\Server\FormParser\StreamedField;
 use Amp\Http\Server\FormParser\StreamingFormParser;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
@@ -56,7 +55,7 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
 
     foreach ($fields as $field) {
         if ($field->getName() === 'test') {
-            $html = '<html lang="en"><body><a href="/">← back</a><br>sha1: ' . \sha1($field->buffer()) . '</body></html>';
+            $html = '<html lang="en"><body><a href="/">← back</a><br>sha1: ' . sha1($field->buffer()) . '</body></html>';
 
             return new Response(
                 status: HttpStatus::OK,
@@ -78,6 +77,6 @@ $server->start(new ClosureRequestHandler(static function (Request $request): Res
 // Await SIGINT, SIGTERM, or SIGSTOP to be received.
 $signal = Amp\trapSignal([\SIGINT, \SIGTERM]);
 
-$logger->info(\sprintf("Received signal %d, stopping HTTP server", $signal));
+$logger->info(sprintf("Received signal %d, stopping HTTP server", $signal));
 
 $server->stop();
