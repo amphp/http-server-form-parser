@@ -37,10 +37,6 @@ final class FormParser
      */
     public function parseForm(Request $request): Form
     {
-        if ($request->hasAttribute(Form::class)) {
-            return $request->getAttribute(Form::class);
-        }
-
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
 
         // Don't consume body if we don't have a form content type
@@ -50,11 +46,7 @@ final class FormParser
             throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly");
         }
 
-        $form = $this->parseBody($body, $boundary);
-
-        $request->setAttribute(Form::class, $form);
-
-        return $form;
+        return $this->parseBody($body, $boundary);
     }
 
     /**

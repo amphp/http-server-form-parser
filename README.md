@@ -17,14 +17,14 @@ Basic usage works by calling `parseForm($request)`, which will buffer the reques
 ```php
 <?php
 
-use Amp\Http\Server\FormParser;
+use Amp\Http\Server\FormParser\Form;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Status;
 
 new ClosureRequestHandler(function (Request $request) {
-    $form = FormParser\parseForm($request);
+    $form = Form::fromRequest($request);
 
     return new Response(Status::OK, [
         "content-type" => "text/plain; charset=utf-8"

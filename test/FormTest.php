@@ -10,7 +10,6 @@ use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
 use Amp\PHPUnit\AsyncTestCase;
 use League\Uri\Http;
-use function Amp\Http\Server\FormParser\parseForm;
 
 class FormTest extends AsyncTestCase
 {
@@ -55,7 +54,7 @@ class FormTest extends AsyncTestCase
         $handler = new ClosureRequestHandler(function (Request $request) use ($callback): Response {
             $callback();
 
-            $form = parseForm($request);
+            $form = Form::fromRequest($request);
 
             $this->assertSame('bar', $form->getValue('foo'));
             $this->assertSame('y', $form->getValue('x'));
@@ -73,7 +72,7 @@ class FormTest extends AsyncTestCase
     public function testNonForm(): void
     {
         $handler = new ClosureRequestHandler(function (Request $request): Response {
-            parseForm($request);
+            Form::fromRequest($request);
 
             $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
             $this->assertSame('{}', $request->getBody()->buffer());
@@ -93,7 +92,7 @@ class FormTest extends AsyncTestCase
         $handler = new ClosureRequestHandler(function (Request $request): Response {
             $this->assertFalse($request->hasAttribute(Form::class));
 
-            $form = parseForm($request);
+            $form = Form::fromRequest($request);
             self::assertSame([], $form->getNames());
 
             $this->assertTrue($request->hasAttribute(Form::class)); // attribute is set either way
