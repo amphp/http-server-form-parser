@@ -10,12 +10,12 @@ use Amp\Http\Server\Request;
  *
  * @throws HttpErrorException
  */
-function parseForm(Request $request, int $bodySizeLimit = null): Form
+function parseForm(Request $request): Form
 {
     static $parser;
-    $parser ??= new FormParser;
+    $parser ??= new FormParser();
 
-    return $parser->parseForm($request, $bodySizeLimit);
+    return $parser->parseForm($request);
 }
 
 /**
