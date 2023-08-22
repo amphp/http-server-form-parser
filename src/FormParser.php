@@ -39,7 +39,9 @@ final class FormParser
 
         $boundary = parseContentBoundary($request->getHeader('content-type') ?? '');
 
-        $form = $this->parseBody($request->getBody()->buffer(), $boundary);
+        // Don't consume body if we don't have a form content type
+        $body = $boundary === null ? '' : $request->getBody()->buffer();
+        $form = $this->parseBody($body, $boundary);
 
         $request->setAttribute(Form::class, $form);
 
