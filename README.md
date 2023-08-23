@@ -12,18 +12,16 @@ composer require amphp/http-server-form-parser
 
 ## Usage
 
-Basic usage works by calling `parseForm($request)`, which will buffer the request body and parse it.
+Basic usage works by calling `Form::fromRequest($request)`, which will buffer the request body and parse it. This method may be called multiple times, so both a [middleware](https://github.com/amphp/http-server#middleware) and [request handler](https://github.com/amphp/http-server#requesthandler) may access the form body.
 
 ```php
-<?php
-
 use Amp\Http\Server\FormParser\Form;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Status;
 
-new ClosureRequestHandler(function (Request $request) {
+$requestHandler = new ClosureRequestHandler(function (Request $request) {
     $form = Form::fromRequest($request);
 
     return new Response(Status::OK, [
@@ -32,4 +30,4 @@ new ClosureRequestHandler(function (Request $request) {
 });
 ```
 
-There's also an advanced streaming parser included, which can be used to stream uploaded files to disk or other locations.
+There's also an advanced streaming parser included, `StreamingFormParser`, which can be used to stream uploaded files to disk or other locations.
