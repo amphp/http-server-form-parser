@@ -105,8 +105,8 @@ final class StreamingFormParser
 
                 try {
                     $headers = Rfc7230::parseHeaderPairs(\substr($buffer, $offset, $end + 2 - $offset));
-                } catch (InvalidHeaderException) {
-                    throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Invalid headers in body part");
+                } catch (InvalidHeaderException $e) {
+                    throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Invalid headers in body part", $e);
                 }
 
                 $headerMap = [];

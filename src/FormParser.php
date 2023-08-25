@@ -42,8 +42,8 @@ final class FormParser
         // Don't consume body if we don't have a form content type
         try {
             $body = $boundary === null ? '' : $request->getBody()->buffer();
-        } catch (StreamException) {
-            throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly");
+        } catch (StreamException $e) {
+            throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Request body ended unexpectedly", $e);
         }
 
         return $this->parseBody($body, $boundary);
@@ -119,8 +119,8 @@ final class FormParser
 
             try {
                 $headers = Rfc7230::parseHeaderPairs(\substr($entry, 0, $position + 2));
-            } catch (InvalidHeaderException) {
-                throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Invalid headers in body part");
+            } catch (InvalidHeaderException $e) {
+                throw new HttpErrorException(HttpStatus::BAD_REQUEST, "Invalid headers in body part", $e);
             }
 
             $headerMap = [];
