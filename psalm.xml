@@ -26,5 +26,11 @@
                 <directory name="src" />
             </errorLevel>
         </RedundantConditionGivenDocblockType>
+
+        <RedundantPropertyInitializationCheck>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </RedundantPropertyInitializationCheck>
     </issueHandlers>
 </psalm>
