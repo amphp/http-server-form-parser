@@ -115,7 +115,7 @@ final class StreamingFormParser
                 }
 
                 $count = \preg_match(
-                    '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]+)"))+\s*$#',
+                    '#^\s*form-data(?:\s*;\s*(?:name\s*=\s*"([^"]+)"|filename\s*=\s*"([^"]*)"))+\s*$#',
                     $headerMap["content-disposition"][0] ?? "",
                     $matches
                 );
