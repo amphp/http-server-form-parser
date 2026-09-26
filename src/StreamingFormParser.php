@@ -164,7 +164,7 @@ final class StreamingFormParser
                 $queue = null;
                 $offset = $end + \strlen($boundarySeparator);
 
-                while (\strlen($buffer) < 4) {
+                while (\strlen($buffer) < $offset + 4) {
                     $buffer .= $chunk = $body->read();
 
                     if ($chunk === null) {
