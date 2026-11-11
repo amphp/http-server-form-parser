@@ -43,7 +43,7 @@
         "amphp/phpunit-util": "^3",
         "phpunit/phpunit": "^9",
         "amphp/log": "^2",
-        "psalm/phar": "^5.6"
+        "psalm/phar": "6.20.10"
     },
     "autoload": {
         "psr-4": {
