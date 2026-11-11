@@ -92,26 +92,31 @@ final class StreamedField implements ReadableStream, \IteratorAggregate
         return $this->message->getHeader($name);
     }
 
+    #[\Override]
     public function read(?Cancellation $cancellation = null): ?string
     {
         return $this->payload->read($cancellation);
     }
 
+    #[\Override]
     public function isReadable(): bool
     {
         return $this->payload->isReadable();
     }
 
+    #[\Override]
     public function isClosed(): bool
     {
         return $this->payload->isClosed();
     }
 
+    #[\Override]
     public function close(): void
     {
         $this->payload->close();
     }
 
+    #[\Override]
     public function onClose(\Closure $onClose): void
     {
         $this->payload->onClose($onClose);
