@@ -15,22 +15,22 @@
     </projectFiles>
 
     <issueHandlers>
-        <MissingClosureReturnType>
+        <PossiblyUnusedMethod>
             <errorLevel type="suppress">
-                <directory name="src" />
+                <directory name="src"/>
             </errorLevel>
-        </MissingClosureReturnType>
+        </PossiblyUnusedMethod>
 
-        <RedundantConditionGivenDocblockType>
+        <RiskyTruthyFalsyComparison>
             <errorLevel type="suppress">
-                <directory name="src" />
+                <directory name="src"/>
             </errorLevel>
-        </RedundantConditionGivenDocblockType>
+        </RiskyTruthyFalsyComparison>
 
-        <RedundantPropertyInitializationCheck>
+        <UnusedClass>
             <errorLevel type="suppress">
-                <directory name="src" />
+                <directory name="src"/>
             </errorLevel>
-        </RedundantPropertyInitializationCheck>
+        </UnusedClass>
     </issueHandlers>
 </psalm>

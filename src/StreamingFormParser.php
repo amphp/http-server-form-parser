@@ -62,6 +62,9 @@ final class StreamingFormParser
         return $pipeline->getIterator();
     }
 
+    /**
+     * @psalm-suppress UnusedVariable, NoValue
+     */
     private function incrementalBoundaryParse(Queue $source, ReadableStream $body, string $boundary): void
     {
         $fieldCount = 0;
@@ -180,6 +183,9 @@ final class StreamingFormParser
         }
     }
 
+    /**
+     * @psalm-suppress UnusedVariable, NoValue
+     */
     private function incrementalFieldParse(Queue $source, ReadableStream $body): void
     {
         $fieldCount = 0;

@@ -11,7 +11,7 @@ final class Form
     use ForbidCloning;
     use ForbidSerialization;
 
-    private static FormParser $formParser;
+    private static ?FormParser $formParser = null;
 
     /**
      * Try parsing the request's body with either application/x-www-form-urlencoded or multipart/form-data.

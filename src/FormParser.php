@@ -110,8 +110,6 @@ final class FormParser
         $exp[0] = \substr($exp[0] ?? "", \strlen($boundary) + 4);
         $exp[\count($exp) - 1] = \substr(\end($exp), 0, -\strlen($boundary) - 8);
 
-        $entry = ''; // For Psalm
-
         foreach ($exp as $entry) {
             if (($position = \strpos($entry, "\r\n\r\n")) === false) {
                 throw new HttpErrorException(HttpStatus::BAD_REQUEST, "No header/body boundary found");
